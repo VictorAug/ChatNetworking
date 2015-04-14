@@ -1,4 +1,4 @@
-package br.iesb.server;
+package br.iesb.client;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
@@ -101,7 +101,7 @@ public class ChatClient {
 	    Box box = Box.createHorizontalBox();
 	    add(box, BorderLayout.SOUTH);
 	    inputTextField = new JTextField();
-	    sendButton = new JButton("Send");
+	    sendButton = new JButton("Enviar");
 	    box.add(inputTextField);
 	    box.add(sendButton);
 	    // Action for the inputTextField and the goButton
@@ -149,7 +149,7 @@ public class ChatClient {
 	    System.exit(0);
 	}
 	JFrame frame = new ChatFrame(access);
-	frame.setTitle("MyChatApp - connected to " + server + ":" + port);
+	frame.setTitle("ChatNetworking - conectado ao " + server + ":" + port);
 	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	frame.pack();
 	frame.setLocationRelativeTo(null);

@@ -2,23 +2,31 @@ package br.iesb.chat;
 
 import javax.swing.JOptionPane;
 
-import br.iesb.client.MultiThreadChatServerSync;
-import br.iesb.server.ChatClient;
+import br.iesb.client.ChatClient;
+import br.iesb.server.MultiThreadChatServerSync;
 
+/**
+ * Class ClientServer.
+ */
 public class ClientServer {
 
+    /** Constante CHAT_NETWORKING_TITLE. */
+    private static final String CHAT_NETWORKING_TITLE = "ChatNetworking";
+
+    /**
+     * O método main.
+     *
+     * @param args os argumentos
+     */
     public static void main(String[] args) {
-	Object[] selectioValues = { "Server", "Client" };
-	String initialSection = "Server";
-	Object selection = JOptionPane.showInputDialog(null, "Login as : ", "MyChatApp", JOptionPane.QUESTION_MESSAGE, null, selectioValues, initialSection);
-	if ("Server".equals(selection)) {
-	    String[] arguments = new String[] {};
-	    MultiThreadChatServerSync.main(arguments);
-	} else if ("Client".equals(selection)) {
-	    String IPServer = JOptionPane.showInputDialog("Enter the Server ip adress");
-	    String[] arguments = new String[] { IPServer };
-	    ChatClient.main(arguments);
-	}
+	Object selection = JOptionPane.showInputDialog(null, "Entrar como : ", CHAT_NETWORKING_TITLE, JOptionPane.QUESTION_MESSAGE, null, new Object[] { "Servidor", "Cliente" }, "Servidor");
+	
+	// INICIA O SERVIDOR
+	if ("Servidor".equals(selection))
+	    MultiThreadChatServerSync.main(new String[] {});
+	// IP CLIENTE
+	else if ("Cliente".equals(selection))
+	    ChatClient.main(new String[] { JOptionPane.showInputDialog(null, "Digite o endereço IP: ", CHAT_NETWORKING_TITLE, JOptionPane.INFORMATION_MESSAGE) });
     }
 
 }
