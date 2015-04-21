@@ -14,7 +14,7 @@ public class ClientServer {
     private static final String CHAT_NETWORKING_TITLE = "ChatNetworking";
 
     /**
-     * O método main.
+     * O metodo main.
      *
      * @param args os argumentos
      */
@@ -26,7 +26,7 @@ public class ClientServer {
 	    MultiThreadChatServerSync.main(new String[] {});
 	// IP CLIENTE
 	else if ("Cliente".equals(selection))
-	    ChatClient.main(new String[] { JOptionPane.showInputDialog(null, "Digite o endereço IP: ", CHAT_NETWORKING_TITLE, JOptionPane.INFORMATION_MESSAGE) });
+	    ChatClient.main(new String[] { JOptionPane.showInputDialog(null, "Digite o endereco IP: ", CHAT_NETWORKING_TITLE, JOptionPane.INFORMATION_MESSAGE) });
     }
 
 }
