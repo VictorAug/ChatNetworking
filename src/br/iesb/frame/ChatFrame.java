@@ -5,33 +5,38 @@ import java.awt.EventQueue;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import net.miginfocom.swing.MigLayout;
 
+
 public class ChatFrame {
 
     private JFrame frame;
-    
+
     private JTextField userNameField;
     private JTextArea chatTextArea;
     private JTextArea inputTextArea;
     private JTextArea usersList;
-    
+
     private BufferedReader reader;
     private PrintWriter writer;
-    
-    private int port = 5000;
-    private String userName, serverIP = "192.168.5.99";
+
+    private final int port = 5000;
+    private String userName;
     private Socket socket;
     private ArrayList<String> userList;
     private boolean isConnected = false;
@@ -87,20 +92,24 @@ public class ChatFrame {
 		userName = userNameField.getText();
 		userNameField.setEditable(false);
 		try {
-		    socket = new Socket(InetAddress.getLocalHost().getHostAddress(), port);
-		    InputStreamReader streamReader = new InputStreamReader(socket.getInputStream());
-		    reader = new BufferedReader(streamReader);
-		    writer = new PrintWriter(socket.getOutputStream());
+		    JOptionPane.showMessageDialog(frame, "Criando socket do servidor na porta "+port, "Info", JOptionPane.DEFAULT_OPTION);
+		    ServerSocket serverSocket = new ServerSocket(port);
+		    socket = serverSocket.accept();
+		    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		    writer = new PrintWriter(socket.getOutputStream(), true);
 		    writer.println(userName + ":foi conectado.:Conectar");
+		    String str = reader.readLine();
+		    writer.println("Hello, "+str);
 		    writer.flush();
+		    serverSocket.close();
 		    isConnected = true;
-		} catch (Exception e2) {
-		    chatTextArea.append("Não foi possível conectar! Tente novamente.\n");
+		} catch (Exception ex) {
+		    chatTextArea.append("Cannot Connect! Try Again. \n");
 		    userNameField.setEditable(true);
 		}
 		listenThread();
 	    } else {
-		chatTextArea.append("Você já está conectado.\n");
+		chatTextArea.append("You are already connected. \n");
 	    }
 	});
 	frame.getContentPane().add(btnConectar, "cell 8 1,grow");
@@ -123,6 +132,7 @@ public class ChatFrame {
 	chatTextArea.setLineWrap(true);
 	chatTextArea.setEditable(false);
 	chatTextArea.setBackground(new Color(0, 0, 0));
+	chatTextArea.setForeground(Color.cyan);
 	scrollPane_1.setViewportView(chatTextArea);
 
 	JScrollPane scrollPane_2 = new JScrollPane();
@@ -149,7 +159,7 @@ public class ChatFrame {
 		inputTextArea.requestFocus();
 	    } else {
 		try {
-		    writer.println(userName+":"+inputTextArea.getText()+":"+"Chat");
+		    writer.println(userName + ":" + inputTextArea.getText() + ":" + "Chat");
 		    writer.flush();
 		} catch (Exception e2) {
 		    chatTextArea.append("Mensagem não foi enviada. \n");
@@ -162,6 +172,21 @@ public class ChatFrame {
 	    inputTextArea.requestFocus();
 	});
 	frame.getContentPane().add(sendButton, "cell 9 5 1 3,grow");
+
+	JMenuBar menuBar = new JMenuBar();
+	frame.setJMenuBar(menuBar);
+
+	JMenu mnArquivo = new JMenu("Arquivo");
+	menuBar.add(mnArquivo);
+
+	JMenuItem menuItem = new JMenuItem("Salvar");
+	mnArquivo.add(menuItem);
+
+	JMenu mnConfiguraes = new JMenu("Configurações");
+	menuBar.add(mnConfiguraes);
+
+	JMenuItem mntmEndereoIp = new JMenuItem("Endereços na rede");
+	mnConfiguraes.add(mntmEndereoIp);
     }
 
     public class IncommingReader implements Runnable {
@@ -170,21 +195,22 @@ public class ChatFrame {
 	public void run() {
 	    String[] data;
 	    String stream;
-
 	    try {
-		while ((stream = reader.readLine()) != null) {
-		    data = stream.split(":");
-		    switch (data[2]) {
-			case "Chat":
-			    chatTextArea.append(data[0] + ": " + data[1] + "\n");
-			    chatTextArea.setCaretPosition(chatTextArea.getDocument().getLength());
-			    break;
-			case "Conectar":
-			    chatTextArea.removeAll();
-			    userAdd(data[0]);
-			    break;
-			default:
-			    break;
+		if (reader != null) {
+		    while ((stream = reader.readLine()) != null) {
+			data = stream.split(":");
+			switch (data[2]) {
+			    case "Chat":
+				chatTextArea.append(data[0] + ": " + data[1] + "\n");
+				chatTextArea.setCaretPosition(chatTextArea.getDocument().getLength());
+				break;
+			    case "Conectar":
+				chatTextArea.removeAll();
+				userAdd(data[0]);
+				break;
+			    default:
+				break;
+			}
 		    }
 		}
 	    } catch (Exception e) {
