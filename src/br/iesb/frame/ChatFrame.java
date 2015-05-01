@@ -3,9 +3,9 @@ package br.iesb.frame;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
+//import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.ServerSocket;
+//import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
@@ -15,7 +15,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
+//import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -75,7 +75,7 @@ public class ChatFrame {
 	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	frame.getContentPane().setLayout(new MigLayout("", "[][fill][][][grow][grow][grow][40][40][40][50][][][50]", "[][][][][grow][30][30][30.00]"));
 
-	JLabel lblUsurio = new JLabel("Usuário:");
+	JLabel lblUsurio = new JLabel("Usuario:");
 	lblUsurio.setForeground(Color.LIGHT_GRAY);
 	frame.getContentPane().add(lblUsurio, "cell 0 1,grow");
 
@@ -90,18 +90,13 @@ public class ChatFrame {
 	btnConectar.addActionListener(e -> {
 	    if (!isConnected) {
 		userName = userNameField.getText();
-		userNameField.setEditable(false);
+		userNameField.setEditable(true);
 		try {
-		    JOptionPane.showMessageDialog(frame, "Criando socket do servidor na porta "+port, "Info", JOptionPane.DEFAULT_OPTION);
-		    ServerSocket serverSocket = new ServerSocket(port);
-		    socket = serverSocket.accept();
-		    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		    writer = new PrintWriter(socket.getOutputStream(), true);
-		    writer.println(userName + ":foi conectado.:Conectar");
-		    String str = reader.readLine();
-		    writer.println("Hello, "+str);
-		    writer.flush();
-		    serverSocket.close();
+		    //JOptionPane.showMessageDialog(frame, "Criando socket do servidor na porta "+port, "Info", JOptionPane.DEFAULT_OPTION);
+		    Socket socket = new Socket("127.0.0.1", 2222);
+		    System.out.println(userName + ": foi conectado.");
+		    chatTextArea.append("Hello, "+userName+"\n");
+		    socket.close();
 		    isConnected = true;
 		} catch (Exception ex) {
 		    chatTextArea.append("Cannot Connect! Try Again. \n");
@@ -159,8 +154,7 @@ public class ChatFrame {
 		inputTextArea.requestFocus();
 	    } else {
 		try {
-		    writer.println(userName + ":" + inputTextArea.getText() + ":" + "Chat");
-		    writer.flush();
+			chatTextArea.append(userName + ":" + inputTextArea.getText() + ":" + "Chat");
 		} catch (Exception e2) {
 		    chatTextArea.append("Mensagem não foi enviada. \n");
 		    e2.printStackTrace();
@@ -261,5 +255,9 @@ public class ChatFrame {
 	userNameField.setEditable(true);
 	usersList.setText("");
     }
+
+	public int getPort() {
+		return port;
+	}
 
 }
