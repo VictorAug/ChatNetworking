@@ -1,4 +1,4 @@
-package br.iesb.cliente.app.bean;
+package br.iesb.app.bean;
 
 import java.io.Serializable;
 import java.util.HashSet;

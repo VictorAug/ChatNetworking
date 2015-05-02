@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import br.iesb.cliente.app.bean.ChatMessage;
+import br.iesb.app.bean.ChatMessage;
 
 
 public class ClienteService implements Serializable {

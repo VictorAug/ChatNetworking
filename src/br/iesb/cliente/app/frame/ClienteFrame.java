@@ -28,8 +28,8 @@ import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 
 import net.miginfocom.swing.MigLayout;
-import br.iesb.cliente.app.bean.ChatMessage;
-import br.iesb.cliente.app.bean.ChatMessage.Action;
+import br.iesb.app.bean.ChatMessage;
+import br.iesb.app.bean.ChatMessage.Action;
 import br.iesb.cliente.app.service.ClienteService;
 
 @SuppressWarnings({ "unused", "rawtypes" })

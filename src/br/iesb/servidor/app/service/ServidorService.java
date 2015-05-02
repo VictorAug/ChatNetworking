@@ -11,8 +11,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import br.iesb.servidor.app.bean.ChatMessage;
-import br.iesb.servidor.app.bean.ChatMessage.Action;
+import br.iesb.app.bean.ChatMessage;
+import br.iesb.app.bean.ChatMessage.Action;
 
 public class ServidorService implements Serializable {
 
