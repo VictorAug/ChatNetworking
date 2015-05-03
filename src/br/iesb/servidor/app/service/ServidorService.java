@@ -34,12 +34,12 @@ public class ServidorService implements Serializable {
      * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
      */
     private Map<String, ObjectOutputStream> mapOnlines = new HashMap<String, ObjectOutputStream>();
-
+    
     public ServidorService() {
 	try {
 	    serverSocket = new ServerSocket(5555);
-	    System.out.println("Running Server...");
 	    while (true) {
+		System.out.println("Running Server...");
 		socket = serverSocket.accept();
 		new Thread(new ListenerSocket(socket)).start();
 	    }

@@ -1,6 +1,9 @@
 package br.iesb.cliente.app.frame;
 
 import java.awt.Color;
+import java.awt.Event;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,6 +13,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Set;
+
 
 import javax.swing.DefaultListModel;
 import javax.swing.DefaultListSelectionModel;
@@ -22,13 +26,18 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 
+
 import net.miginfocom.swing.MigLayout;
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
+import br.iesb.cliente.app.action.AbrirAction;
+import br.iesb.cliente.app.action.SalvarAction;
+import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
 
 // TODO: Auto-generated Javadoc
@@ -94,6 +103,10 @@ public class ClienteFrame extends JFrame {
 
     /** Atributo btn limpar. */
     private JButton btnLimpar;
+    private JMenuItem mntmAbrir;
+
+    private JMenuItem mntmSalvarComo;
+    private JMenuItem mntmSalvar;
 
     /**
      * Create the application.
@@ -320,6 +333,8 @@ public class ClienteFrame extends JFrame {
 	    }
 
 	    this.txtAreaSend.setText("");
+	    mntmSalvarComo.addActionListener(new SalvarComoAction(this, txtAreaReceive));
+	    mntmSalvar.addActionListener(new SalvarAction(this, message, txtAreaReceive));
 	});
 
 	txtAreaReceive = new JTextArea();
@@ -349,8 +364,18 @@ public class ClienteFrame extends JFrame {
 	JMenu mnArquivo = new JMenu("Arquivo");
 	menuBar.add(mnArquivo);
 
-	JMenuItem menuItem = new JMenuItem("Salvar");
-	mnArquivo.add(menuItem);
+	mntmSalvarComo = new JMenuItem("Salvar como...");
+	mntmSalvarComo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
+	mnArquivo.add(mntmSalvarComo);
+
+	mntmAbrir = new JMenuItem("Abrir...");
+	mntmAbrir.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+	mntmAbrir.addActionListener(new AbrirAction());
+	
+	mntmSalvar = new JMenuItem("Salvar");
+	mntmSalvar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+	mnArquivo.add(mntmSalvar);
+	mnArquivo.add(mntmAbrir);
 
 	JMenu mnConfiguraes = new JMenu("Configurações");
 	menuBar.add(mnConfiguraes);
