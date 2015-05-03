@@ -48,9 +48,6 @@ public class AbrirAction extends AbstractAction {
 	try {
 	    arquivo.setReadOnly();
 	    Desktop.getDesktop().open(arquivo);
-//	    FileReader in = new FileReader(arquivo);
-//	    in.read();
-//	    in.close();
 	} catch (IOException e) {
 	    JOptionPane.showMessageDialog(null, e.getMessage());
 	} catch (SecurityException e) {

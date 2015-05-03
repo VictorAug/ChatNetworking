@@ -54,14 +54,12 @@ public class SalvarAction extends AbstractAction {
 	try {
 	    if (!Files.exists(Paths.get(DB_PATH)) && file.setReadOnly())
 		file.mkdir();
+	    escreveArquivo();
 	} catch (SecurityException se) {
 	    se.printStackTrace();
-	}
-	try {
-	    escreveArquivo();
 	} catch (IOException e1) {
 	    e1.printStackTrace();
-	}
+	} 
     }
 
     /**
