@@ -38,6 +38,8 @@ import br.iesb.cliente.app.action.SalvarAction;
 import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
 import javax.swing.JLabel;
+import javax.swing.JToolBar;
+import javax.swing.JTextPane;
 
 /**
  * Class ClienteFrame.
@@ -112,6 +114,10 @@ public class ClienteFrame extends JFrame {
     private JMenuItem mntmSalvar;
     private JLabel lblServidor;
     private JLabel lblCliente;
+    private JLabel lblUsurio;
+    private JButton btnNewButton;
+    private JTextPane textPane;
+    private JTextPane textPane_1;
 
     /**
      * Create the application.
@@ -129,41 +135,44 @@ public class ClienteFrame extends JFrame {
 	getContentPane().setBackground(Color.DARK_GRAY);
 	setBounds(100, 100, 980, 720);
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	getContentPane().setLayout(new MigLayout("", "[][fill][][16.00][grow][][grow][20][20][40][50][][][50]", "[20][][][20.00][grow][][15][15][15][15]"));
-	
-		txtName = new JTextField();
-		txtName.setForeground(new Color(255, 165, 0));
-		txtName.setBackground(Color.BLACK);
-		getContentPane().add(txtName, "cell 3 0 4 1,grow");
-		txtName.setColumns(10);
-	
-		btnConectar = new JButton("Conectar");
-		btnConectar.addActionListener(e -> {
-		    String name = this.txtName.getText();
+	getContentPane().setLayout(new MigLayout("", "[][fill][][16.00][grow][40][20][20][20][40][0.01][50][grow][][50]", "[20][][][20.00][grow][][][15][15][15][15]"));
 
-		    if (!name.isEmpty()) {
-			this.message = new ChatMessage();
-			this.message.setAction(Action.CONNECT);
-			this.message.setName(name);
-			this.service = new ClienteService();
-			this.socket = this.service.connect();
-			new Thread(new ListenerSocket(this.socket)).start();
-			this.service.send(message);
-		    }
-		});
-		getContentPane().add(btnConectar, "cell 7 0 2 1,grow");
-	
-		btnSair = new JButton("Sair");
-		btnSair.setEnabled(false);
-		btnSair.addActionListener(e -> {
-		    ChatMessage message = new ChatMessage();
-		    message.setName(this.message.getName());
-		    message.setAction(Action.DISCONNECT);
-		    this.service.send(message);
-		    disconnected();
+	lblUsurio = new JLabel("Usuário: ");
+	lblUsurio.setForeground(Color.LIGHT_GRAY);
+	getContentPane().add(lblUsurio, "cell 0 0,grow");
 
-		});
-		getContentPane().add(btnSair, "cell 9 0,grow");
+	txtName = new JTextField();
+	txtName.setForeground(new Color(255, 165, 0));
+	txtName.setBackground(Color.BLACK);
+	getContentPane().add(txtName, "cell 1 0 7 1,grow");
+	txtName.setColumns(10);
+
+	btnSair = new JButton("Sair");
+	btnSair.setEnabled(false);
+	btnSair.addActionListener(e -> {
+	    ChatMessage message = new ChatMessage();
+	    message.setName(this.message.getName());
+	    message.setAction(Action.DISCONNECT);
+	    this.service.send(message);
+	    disconnected();
+	});
+
+	btnConectar = new JButton("Conectar");
+	btnConectar.addActionListener(e -> {
+	    String name = this.txtName.getText();
+	    if (!name.isEmpty()) {
+		this.message = new ChatMessage();
+		this.message.setAction(Action.CONNECT);
+		this.message.setName(name);
+		this.service = new ClienteService();
+		this.socket = this.service.connect();
+		new Thread(new ListenerSocket(this.socket)).start();
+		this.service.send(message);
+	    }
+	    lblServidor.setForeground(Color.green);
+	});
+	getContentPane().add(btnConectar, "cell 8 0,grow");
+	getContentPane().add(btnSair, "cell 9 0,grow");
 
 	listOnlines = new JList();
 	listOnlines.setSelectionMode(DefaultListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -171,7 +180,20 @@ public class ClienteFrame extends JFrame {
 	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
 	listOnlines.setBackground(Color.BLACK);
 	listOnlines.setForeground(Color.YELLOW);
-	getContentPane().add(listOnlines, "cell 10 0 4 8,grow");
+	getContentPane().add(listOnlines, "cell 11 0 4 9,grow");
+
+	txtAreaReceive = new JTextArea();
+	txtAreaReceive.setEditable(false);
+	txtAreaReceive.setEnabled(false);
+	txtAreaReceive.setForeground(Color.CYAN);
+	txtAreaReceive.setBackground(Color.BLACK);
+	getContentPane().add(txtAreaReceive, "cell 0 1 11 4,grow");
+
+	txtAreaSend = new JTextArea();
+	txtAreaSend.setEnabled(false);
+	txtAreaSend.setForeground(Color.GREEN);
+	txtAreaSend.setBackground(Color.BLACK);
+	getContentPane().add(txtAreaSend, "cell 0 5 11 4,grow");
 
 	btnEnviar = new JButton("Enviar");
 	btnEnviar.setEnabled(false);
@@ -201,34 +223,34 @@ public class ClienteFrame extends JFrame {
 	    mntmSalvar.addActionListener(new SalvarAction(this, message, txtAreaReceive));
 	});
 
-	txtAreaReceive = new JTextArea();
-	txtAreaReceive.setEditable(false);
-	txtAreaReceive.setEnabled(false);
-	txtAreaReceive.setForeground(Color.CYAN);
-	txtAreaReceive.setBackground(Color.BLACK);
-	getContentPane().add(txtAreaReceive, "cell 0 1 10 4,grow");
-	getContentPane().add(btnEnviar, "cell 9 6 1 2,grow");
-
 	btnLimpar = new JButton("Limpar");
 	btnLimpar.setEnabled(false);
 	btnLimpar.addActionListener(e -> {
 	    this.txtAreaReceive.setText("");
 	});
+	getContentPane().add(btnLimpar, "cell 5 9,grow");
 
-	txtAreaSend = new JTextArea();
-	txtAreaSend.setEnabled(false);
-	txtAreaSend.setForeground(Color.GREEN);
-	txtAreaSend.setBackground(Color.BLACK);
-	getContentPane().add(txtAreaSend, "cell 0 6 9 4,grow");
-	getContentPane().add(btnLimpar, "cell 9 8 1 2,grow");
-	
+	btnNewButton = new JButton("Escolher arquivo...");
+	getContentPane().add(btnNewButton, "cell 7 9");
+	getContentPane().add(btnEnviar, "cell 9 9,grow");
+
 	lblServidor = new JLabel("Servidor:");
 	lblServidor.setForeground(Color.lightGray);
-	getContentPane().add(lblServidor, "cell 10 8,grow");
-	
+	getContentPane().add(lblServidor, "cell 11 9,grow");
+
+	textPane = new JTextPane();
+	textPane.setBackground(Color.darkGray);
+	textPane.setForeground(Color.green);
+	getContentPane().add(textPane, "cell 12 9 3 1,grow");
+
 	lblCliente = new JLabel("Cliente: ");
 	lblCliente.setForeground(Color.lightGray);
-	getContentPane().add(lblCliente, "cell 10 9,grow");
+	getContentPane().add(lblCliente, "cell 11 10,grow");
+
+	textPane_1 = new JTextPane();
+	textPane_1.setBackground(Color.darkGray);
+	textPane_1.setForeground(Color.red);
+	getContentPane().add(textPane_1, "cell 12 10 3 1,grow");
 
 	JMenuBar menuBar = new JMenuBar();
 	setJMenuBar(menuBar);
