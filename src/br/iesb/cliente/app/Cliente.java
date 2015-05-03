@@ -3,6 +3,8 @@ package br.iesb.cliente.app;
 import java.awt.EventQueue;
 import java.io.Serializable;
 
+import javax.swing.UIManager;
+
 import br.iesb.cliente.app.frame.ClienteFrame;
 
 public class Cliente implements Serializable {
@@ -10,18 +12,32 @@ public class Cliente implements Serializable {
     private static final long serialVersionUID = 1;
 
     /**
-     * Launch the application.
+     * O método main.
+     *
+     * @param args os argumentos
      */
-    public static void main(String[] args) {
-	EventQueue.invokeLater(new Runnable() {
-	    public void run() {
-		try {
-		    new ClienteFrame().setVisible(true);
-		} catch (Exception e) {
-		    e.printStackTrace();
+    public static void main(String args[]) {
+	try {
+	    for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+		System.out.println(info.getName());
+		if ("Nimbus".equals(info.getName())) {
+		    UIManager.setLookAndFeel(info.getClassName());
+		    break;
 		}
 	    }
-	});
+	} catch (ClassNotFoundException ex) {
+	    ex.printStackTrace();
+	} catch (InstantiationException ex) {
+	    ex.printStackTrace();
+	} catch (IllegalAccessException ex) {
+	    ex.printStackTrace();
+	} catch (javax.swing.UnsupportedLookAndFeelException ex) {
+	    ex.printStackTrace();
+	}
+	// </editor-fold>
+
+	/* Create and display the form */
+	EventQueue.invokeLater(() -> new ClienteFrame().setVisible(true));
     }
 
 }

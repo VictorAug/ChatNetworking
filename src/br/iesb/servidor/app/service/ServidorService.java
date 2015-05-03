@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
@@ -35,7 +37,7 @@ public class ServidorService implements Serializable {
 
     public ServidorService() {
 	try {
-	    serverSocket = new ServerSocket(5555); //
+	    serverSocket = new ServerSocket(5555);
 	    System.out.println("Running Server...");
 	    while (true) {
 		socket = serverSocket.accept();
@@ -47,26 +49,27 @@ public class ServidorService implements Serializable {
     }
 
     /**
-     * Classe ListenerSocket.
-     * <br></br>
-     * É o ouvinte do servidor.
+     * Classe ListenerSocket. <br>
+     * </br> É o ouvinte do servidor.
      */
     private class ListenerSocket implements Runnable {
 
 	/** Executa o envio de mensagem do servidor. */
 	private ObjectOutputStream output;
-	
+
 	/** Recebe a mensagem enviada pelo cliente. */
 	private ObjectInputStream input;
 
 	/**
 	 * Instancia um novo listener socket.
 	 *
-	 * @param socket socket da comunicação cliente-servidor estabelecida.
+	 * @param socket
+	 *            socket da comunicação cliente-servidor estabelecida.
 	 */
 	public ListenerSocket(Socket socket) {
 	    try {
-		// input output agora pertencem exclusivamente do cliente que se conectou.
+		// input output agora pertencem exclusivamente do cliente que se
+		// conectou.
 		this.output = new ObjectOutputStream(socket.getOutputStream());
 		this.input = new ObjectInputStream(socket.getInputStream());
 	    } catch (IOException e) {
@@ -82,22 +85,21 @@ public class ServidorService implements Serializable {
 		    Action action = message.getAction();
 		    switch (action) {
 			case CONNECT:
-			    if (connect(message, output)) {
+			    boolean isConnect = connect(message, output);
+			    if (isConnect) {
 				mapOnlines.put(message.getName(), output);
 				sendOnlines();
 			    }
 			    break;
 			case DISCONNECT:
 			    disconnect(message, output);
+			    sendOnlines();
 			    return;
 			case SEND_ONE:
 			    sendOne(message);
 			    break;
 			case SEND_ALL:
 			    sendAll(message);
-			    break;
-			case USERS_ONLINE:
-			    sendOnlines();
 			    break;
 			default:
 			    break;
@@ -106,7 +108,7 @@ public class ServidorService implements Serializable {
 	    } catch (IOException e) {
 		ChatMessage cm = new ChatMessage();
 		cm.setName(message.getName());
-		disconnect(message, output);
+		disconnect(cm, output);
 		sendOnlines();
 		System.out.println(message.getName() + " deixou o chat!");
 	    } catch (ClassNotFoundException e) {
@@ -119,8 +121,10 @@ public class ServidorService implements Serializable {
     /**
      * Connect.
      *
-     * @param message mensagem recebida pelo servidor
-     * @param output objeto que será enviado pelo servidor
+     * @param message
+     *            mensagem recebida pelo servidor
+     * @param output
+     *            objeto que será enviado pelo servidor
      * @return true, se a conexão foi estabelecida
      */
     private boolean connect(ChatMessage message, ObjectOutputStream output) {
@@ -151,35 +155,35 @@ public class ServidorService implements Serializable {
 
     private void sendOne(ChatMessage message) {
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    if (kv.getKey().equals(message.getNameReserved())) {
-		try {
-		    kv.getValue().writeObject(message);
-		} catch (IOException e) {
-		    e.printStackTrace();
-		}
-	    }
-	}
+            if (kv.getKey().equals(message.getNameReserved())) {
+                try {
+                    kv.getValue().writeObject(message);
+                } catch (IOException ex) {
+                    Logger.getLogger(ServidorService.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }
 
     private void sendAll(ChatMessage message) {
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    if (!kv.getKey().equals(message.getName())) {
-		try {
-		    message.setAction(Action.SEND_ONE);
-		    kv.getValue().writeObject(message);
-		} catch (IOException e) {
-		    e.printStackTrace();
-		}
-	    }
-	}
+            if (!kv.getKey().equals(message.getName())) {
+                message.setAction(Action.SEND_ONE);
+                try {
+                    kv.getValue().writeObject(message);
+                } catch (IOException ex) {
+                    Logger.getLogger(ServidorService.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }
 
     private void send(ChatMessage message, ObjectOutputStream output) {
 	try {
-	    output.writeObject(message);
-	} catch (IOException e) {
-	    e.printStackTrace();
-	}
+            output.writeObject(message);
+        } catch (IOException ex) {
+            Logger.getLogger(ServidorService.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
@@ -187,23 +191,22 @@ public class ServidorService implements Serializable {
      */
     private void sendOnlines() {
 	Set<String> setNames = new HashSet<String>();
-	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    setNames.add(kv.getKey());
-	}
+        for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
+            setNames.add(kv.getKey());
+        }
 
-	ChatMessage message = new ChatMessage();
-	message.setAction(Action.USERS_ONLINE);
-	message.setSetOnlines(setNames);
+        ChatMessage message = new ChatMessage();
+        message.setAction(Action.USERS_ONLINE);
+        message.setSetOnlines(setNames);
 
-	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    message.setName(kv.getKey());
-	    try {
-		System.out.println("name -- " + message.getName());
-		kv.getValue().writeObject(message);
-	    } catch (IOException e) {
-		e.printStackTrace();
-	    }
-	}
+        for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
+            message.setName(kv.getKey());
+            try {
+                kv.getValue().writeObject(message);
+            } catch (IOException ex) {
+                Logger.getLogger(ServidorService.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
 }

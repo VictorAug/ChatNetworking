@@ -9,10 +9,8 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 
-import javax.swing.AbstractListModel;
 import javax.swing.DefaultListModel;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
@@ -42,13 +40,13 @@ public class ClienteFrame extends JFrame {
 
     /** Constante serialVersionUID. */
     private static final long serialVersionUID = -7997090265601989938L;
-    
+
     /** Atributo socket. */
     private Socket socket;
-    
+
     /** Atributo message. */
     private ChatMessage message;
-    
+
     /** Atributo service. */
     private ClienteService service;
 
@@ -57,16 +55,16 @@ public class ClienteFrame extends JFrame {
 
     /** Atributo reader. */
     private BufferedReader reader;
-    
+
     /** Atributo print writer. */
     private PrintWriter printWriter;
 
     /** Atributo user name. */
     private String userName;
-    
+
     /** Atributo user list. */
     private ArrayList<String> userList;
-    
+
     /** Atributo is connected. */
     private boolean isConnected = false;
 
@@ -75,7 +73,7 @@ public class ClienteFrame extends JFrame {
 
     /** Atributo print stream. */
     private PrintStream printStream;
-    
+
     /** Atributo list onlines. */
     private JList listOnlines;
 
@@ -115,7 +113,8 @@ public class ClienteFrame extends JFrame {
 	/**
 	 * Instancia um novo listener socket.
 	 *
-	 * @param socket the socket
+	 * @param socket
+	 *            the socket
 	 */
 	public ListenerSocket(Socket socket) {
 	    try {
@@ -125,7 +124,9 @@ public class ClienteFrame extends JFrame {
 	    }
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Runnable#run()
 	 */
 	@Override
@@ -143,6 +144,7 @@ public class ClienteFrame extends JFrame {
 			    socket.close();
 			    break;
 			case SEND_ONE:
+			    System.out.println("::: " + message.getText() + " :::");
 			    receive(message);
 			    break;
 			case USERS_ONLINE:
@@ -163,17 +165,19 @@ public class ClienteFrame extends JFrame {
     /**
      * Connected.
      *
-     * @param message the message
+     * @param message
+     *            the message
      */
     private void connected(ChatMessage message) {
 	if (message.getText().equals("NO")) {
-	    this.message.setText("");
+	    this.txtName.setText("");
 	    JOptionPane.showMessageDialog(this, "Conexão não realizada!\nTente novamente com um novo nome.");
 	    return;
 	}
+
 	this.message = message;
 	this.btnConectar.setEnabled(false);
-	this.txtName.setEnabled(false);
+	this.txtName.setEditable(false);
 
 	this.btnSair.setEnabled(true);
 	this.txtAreaSend.setEnabled(true);
@@ -196,7 +200,7 @@ public class ClienteFrame extends JFrame {
 	this.txtAreaReceive.setEnabled(false);
 	this.btnEnviar.setEnabled(false);
 	this.btnLimpar.setEnabled(false);
-	
+
 	this.txtAreaReceive.setText("");
 	this.txtAreaSend.setText("");
 
@@ -206,7 +210,8 @@ public class ClienteFrame extends JFrame {
     /**
      * Receive.
      *
-     * @param message the message
+     * @param message
+     *            the message
      */
     private void receive(ChatMessage message) {
 	this.txtAreaReceive.append(message.getName() + " diz:  " + message.getText() + "\n");
@@ -215,18 +220,19 @@ public class ClienteFrame extends JFrame {
     /**
      * Refresh onlines.
      *
-     * @param message the message
+     * @param message
+     *            the message
      */
     @SuppressWarnings("unchecked")
     private void refreshOnlines(ChatMessage message) {
 	System.out.println(message.getSetOnlines().toString());
-	
+
 	Set<String> names = message.getSetOnlines();
-	
+
 	names.remove(message.getName());
-	
+
 	String[] array = (String[]) names.toArray(new String[names.size()]);
-	
+
 	this.listOnlines.setListData(array);
 	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	this.listOnlines.setLayoutOrientation(JList.VERTICAL);
@@ -251,16 +257,19 @@ public class ClienteFrame extends JFrame {
 
 	btnConectar = new JButton("Conectar");
 	btnConectar.addActionListener(e -> {
-	    String name = txtName.getText();
+	    String name = this.txtName.getText();
+
 	    if (!name.isEmpty()) {
 		this.message = new ChatMessage();
 		this.message.setAction(Action.CONNECT);
 		this.message.setName(name);
+
 		this.service = new ClienteService();
 		this.socket = this.service.connect();
+
 		new Thread(new ListenerSocket(this.socket)).start();
+
 		this.service.send(message);
-		System.out.println("Running Client...");
 	    }
 	});
 	getContentPane().add(btnConectar, "cell 8 1,grow");
@@ -273,6 +282,7 @@ public class ClienteFrame extends JFrame {
 	    message.setAction(Action.DISCONNECT);
 	    this.service.send(message);
 	    disconnected();
+
 	});
 	getContentPane().add(btnSair, "cell 9 1,grow");
 
@@ -289,8 +299,9 @@ public class ClienteFrame extends JFrame {
 	btnEnviar.addActionListener(e -> {
 	    String text = this.txtAreaSend.getText();
 	    String name = this.message.getName();
-	    
+
 	    this.message = new ChatMessage();
+
 	    if (this.listOnlines.getSelectedIndex() > -1) {
 		this.message.setNameReserved((String) this.listOnlines.getSelectedValue());
 		this.message.setAction(Action.SEND_ONE);
@@ -298,13 +309,16 @@ public class ClienteFrame extends JFrame {
 	    } else {
 		this.message.setAction(Action.SEND_ALL);
 	    }
+
 	    if (!text.isEmpty()) {
 		this.message.setName(name);
 		this.message.setText(text);
-		this.message.setAction(Action.SEND_ALL);
+
 		this.txtAreaReceive.append("Você disse: " + text + "\n");
+
 		this.service.send(this.message);
 	    }
+
 	    this.txtAreaSend.setText("");
 	});
 
