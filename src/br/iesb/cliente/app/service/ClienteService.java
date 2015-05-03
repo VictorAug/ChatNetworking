@@ -3,7 +3,6 @@ package br.iesb.cliente.app.service;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 

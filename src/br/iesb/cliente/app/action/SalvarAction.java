@@ -36,7 +36,7 @@ public class SalvarAction extends AbstractAction {
      * @param txtAreaReceive
      */
     public SalvarAction(JFrame frame, ChatMessage message, JTextArea txtAreaReceive) {
-	super("Salvar como...");
+	super("Salvar");
 	this.putValue(Action.SHORT_DESCRIPTION, "Salvar arquivo");
 	this.message = message;
 	this.txtAreaReceive = txtAreaReceive;
@@ -51,14 +51,13 @@ public class SalvarAction extends AbstractAction {
     @Override
     public void actionPerformed(ActionEvent e) {
 	File file = new File(DB_PATH);
+	file.setReadOnly();
+	if (!Files.exists(Paths.get(DB_PATH)))
+	    file.mkdir();
 	try {
-	    if (!Files.exists(Paths.get(DB_PATH)) && file.setReadOnly())
-		file.mkdir();
 	    escreveArquivo();
-	} catch (SecurityException se) {
+	} catch (IOException se) {
 	    se.printStackTrace();
-	} catch (IOException e1) {
-	    e1.printStackTrace();
 	} 
     }
 

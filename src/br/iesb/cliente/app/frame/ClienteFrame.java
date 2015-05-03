@@ -37,6 +37,7 @@ import br.iesb.cliente.app.action.AbrirAction;
 import br.iesb.cliente.app.action.SalvarAction;
 import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
+import javax.swing.JLabel;
 
 /**
  * Class ClienteFrame.
@@ -100,21 +101,159 @@ public class ClienteFrame extends JFrame {
 
     /** Atributo btn limpar. */
     private JButton btnLimpar;
-    
+
     /** Atributo mntm abrir. */
     private JMenuItem mntmAbrir;
 
     /** Atributo mntm salvar como. */
     private JMenuItem mntmSalvarComo;
-    
+
     /** Atributo mntm salvar. */
     private JMenuItem mntmSalvar;
+    private JLabel lblServidor;
+    private JLabel lblCliente;
 
     /**
      * Create the application.
      */
     public ClienteFrame() {
 	initialize();
+    }
+
+    /**
+     * Initialize the contents of the frame.
+     */
+    @SuppressWarnings("unchecked")
+    private void initialize() {
+	getContentPane().setForeground(Color.LIGHT_GRAY);
+	getContentPane().setBackground(Color.DARK_GRAY);
+	setBounds(100, 100, 980, 720);
+	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	getContentPane().setLayout(new MigLayout("", "[][fill][][16.00][grow][][grow][20][20][40][50][][][50]", "[20][][][20.00][grow][][15][15][15][15]"));
+	
+		txtName = new JTextField();
+		txtName.setForeground(new Color(255, 165, 0));
+		txtName.setBackground(Color.BLACK);
+		getContentPane().add(txtName, "cell 3 0 4 1,grow");
+		txtName.setColumns(10);
+	
+		btnConectar = new JButton("Conectar");
+		btnConectar.addActionListener(e -> {
+		    String name = this.txtName.getText();
+
+		    if (!name.isEmpty()) {
+			this.message = new ChatMessage();
+			this.message.setAction(Action.CONNECT);
+			this.message.setName(name);
+			this.service = new ClienteService();
+			this.socket = this.service.connect();
+			new Thread(new ListenerSocket(this.socket)).start();
+			this.service.send(message);
+		    }
+		});
+		getContentPane().add(btnConectar, "cell 7 0 2 1,grow");
+	
+		btnSair = new JButton("Sair");
+		btnSair.setEnabled(false);
+		btnSair.addActionListener(e -> {
+		    ChatMessage message = new ChatMessage();
+		    message.setName(this.message.getName());
+		    message.setAction(Action.DISCONNECT);
+		    this.service.send(message);
+		    disconnected();
+
+		});
+		getContentPane().add(btnSair, "cell 9 0,grow");
+
+	listOnlines = new JList();
+	listOnlines.setSelectionMode(DefaultListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+	listOnlines.setModel(new DefaultListModel<String>());
+	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
+	listOnlines.setBackground(Color.BLACK);
+	listOnlines.setForeground(Color.YELLOW);
+	getContentPane().add(listOnlines, "cell 10 0 4 8,grow");
+
+	btnEnviar = new JButton("Enviar");
+	btnEnviar.setEnabled(false);
+	btnEnviar.addActionListener(e -> {
+	    String text = this.txtAreaSend.getText();
+	    String name = this.message.getName();
+
+	    this.message = new ChatMessage();
+
+	    if (this.listOnlines.getSelectedIndex() > -1) {
+		this.message.setNameReserved((String) this.listOnlines.getSelectedValue());
+		this.message.setAction(Action.SEND_ONE);
+		this.listOnlines.clearSelection();
+	    } else {
+		this.message.setAction(Action.SEND_ALL);
+	    }
+
+	    if (!text.isEmpty()) {
+		this.message.setName(name);
+		this.message.setText(text);
+		this.txtAreaReceive.append("Você disse: " + text + "\n");
+		this.service.send(this.message);
+	    }
+
+	    this.txtAreaSend.setText("");
+	    mntmSalvarComo.addActionListener(new SalvarComoAction(this, txtAreaReceive));
+	    mntmSalvar.addActionListener(new SalvarAction(this, message, txtAreaReceive));
+	});
+
+	txtAreaReceive = new JTextArea();
+	txtAreaReceive.setEditable(false);
+	txtAreaReceive.setEnabled(false);
+	txtAreaReceive.setForeground(Color.CYAN);
+	txtAreaReceive.setBackground(Color.BLACK);
+	getContentPane().add(txtAreaReceive, "cell 0 1 10 4,grow");
+	getContentPane().add(btnEnviar, "cell 9 6 1 2,grow");
+
+	btnLimpar = new JButton("Limpar");
+	btnLimpar.setEnabled(false);
+	btnLimpar.addActionListener(e -> {
+	    this.txtAreaReceive.setText("");
+	});
+
+	txtAreaSend = new JTextArea();
+	txtAreaSend.setEnabled(false);
+	txtAreaSend.setForeground(Color.GREEN);
+	txtAreaSend.setBackground(Color.BLACK);
+	getContentPane().add(txtAreaSend, "cell 0 6 9 4,grow");
+	getContentPane().add(btnLimpar, "cell 9 8 1 2,grow");
+	
+	lblServidor = new JLabel("Servidor:");
+	lblServidor.setForeground(Color.lightGray);
+	getContentPane().add(lblServidor, "cell 10 8,grow");
+	
+	lblCliente = new JLabel("Cliente: ");
+	lblCliente.setForeground(Color.lightGray);
+	getContentPane().add(lblCliente, "cell 10 9,grow");
+
+	JMenuBar menuBar = new JMenuBar();
+	setJMenuBar(menuBar);
+
+	JMenu mnArquivo = new JMenu("Arquivo");
+	menuBar.add(mnArquivo);
+
+	mntmSalvarComo = new JMenuItem("Salvar como...");
+	mntmSalvarComo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
+	mnArquivo.add(mntmSalvarComo);
+
+	mntmAbrir = new JMenuItem("Abrir...");
+	mntmAbrir.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+	mntmAbrir.addActionListener(new AbrirAction());
+
+	mntmSalvar = new JMenuItem("Salvar");
+	mntmSalvar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+	mnArquivo.add(mntmSalvar);
+	mnArquivo.add(mntmAbrir);
+
+	JMenu mnConfiguraes = new JMenu("Configurações");
+	menuBar.add(mnConfiguraes);
+
+	JMenuItem mntmEndereoIp = new JMenuItem("Endereços na rede");
+	mnConfiguraes.add(mntmEndereoIp);
     }
 
     /**
@@ -149,8 +288,7 @@ public class ClienteFrame extends JFrame {
 	    ChatMessage message = null;
 	    try {
 		while ((message = (ChatMessage) input.readObject()) != null) {
-		    Action action = message.getAction();
-		    switch (action) {
+		    switch (message.getAction()) {
 			case CONNECT:
 			    connected(message);
 			    break;
@@ -241,134 +379,6 @@ public class ClienteFrame extends JFrame {
 	this.listOnlines.setListData(array);
 	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	this.listOnlines.setLayoutOrientation(JList.VERTICAL);
-    }
-
-    /**
-     * Initialize the contents of the frame.
-     */
-    @SuppressWarnings("unchecked")
-    private void initialize() {
-	getContentPane().setForeground(Color.LIGHT_GRAY);
-	getContentPane().setBackground(Color.DARK_GRAY);
-	setBounds(100, 100, 640, 480);
-	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	getContentPane().setLayout(new MigLayout("", "[][fill][][][grow][grow][grow][40,grow][40][40][50][][][50]", "[][][][20.00][grow][15][15][15][15]"));
-
-	txtName = new JTextField();
-	txtName.setForeground(new Color(255, 165, 0));
-	txtName.setBackground(Color.BLACK);
-	getContentPane().add(txtName, "cell 0 1 8 1,growx");
-	txtName.setColumns(10);
-
-	btnConectar = new JButton("Conectar");
-	btnConectar.addActionListener(e -> {
-	    String name = this.txtName.getText();
-
-	    if (!name.isEmpty()) {
-		this.message = new ChatMessage();
-		this.message.setAction(Action.CONNECT);
-		this.message.setName(name);
-		this.service = new ClienteService();
-		this.socket = this.service.connect();
-		new Thread(new ListenerSocket(this.socket)).start();
-		this.service.send(message);
-	    }
-	});
-	getContentPane().add(btnConectar, "cell 8 1,grow");
-
-	btnSair = new JButton("Sair");
-	btnSair.setEnabled(false);
-	btnSair.addActionListener(e -> {
-	    ChatMessage message = new ChatMessage();
-	    message.setName(this.message.getName());
-	    message.setAction(Action.DISCONNECT);
-	    this.service.send(message);
-	    disconnected();
-
-	});
-	getContentPane().add(btnSair, "cell 9 1,grow");
-
-	listOnlines = new JList();
-	listOnlines.setSelectionMode(DefaultListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-	listOnlines.setModel(new DefaultListModel<String>());
-	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
-	listOnlines.setBackground(Color.BLACK);
-	listOnlines.setForeground(Color.YELLOW);
-	getContentPane().add(listOnlines, "cell 10 1 4 8,grow");
-
-	btnEnviar = new JButton("Enviar");
-	btnEnviar.setEnabled(false);
-	btnEnviar.addActionListener(e -> {
-	    String text = this.txtAreaSend.getText();
-	    String name = this.message.getName();
-
-	    this.message = new ChatMessage();
-
-	    if (this.listOnlines.getSelectedIndex() > -1) {
-		this.message.setNameReserved((String) this.listOnlines.getSelectedValue());
-		this.message.setAction(Action.SEND_ONE);
-		this.listOnlines.clearSelection();
-	    } else {
-		this.message.setAction(Action.SEND_ALL);
-	    }
-
-	    if (!text.isEmpty()) {
-		this.message.setName(name);
-		this.message.setText(text);
-		this.txtAreaReceive.append("Você disse: " + text + "\n");
-		this.service.send(this.message);
-	    }
-
-	    this.txtAreaSend.setText("");
-	    mntmSalvarComo.addActionListener(new SalvarComoAction(this, txtAreaReceive));
-	    mntmSalvar.addActionListener(new SalvarAction(this, message, txtAreaReceive));
-	});
-
-	txtAreaReceive = new JTextArea();
-	txtAreaReceive.setEditable(false);
-	txtAreaReceive.setEnabled(false);
-	txtAreaReceive.setForeground(Color.CYAN);
-	txtAreaReceive.setBackground(Color.BLACK);
-	getContentPane().add(txtAreaReceive, "cell 0 2 10 3,grow");
-	getContentPane().add(btnEnviar, "cell 9 5 1 2,grow");
-
-	btnLimpar = new JButton("Limpar");
-	btnLimpar.setEnabled(false);
-	btnLimpar.addActionListener(e -> {
-	    this.txtAreaReceive.setText("");
-	});
-
-	txtAreaSend = new JTextArea();
-	txtAreaSend.setEnabled(false);
-	txtAreaSend.setForeground(Color.GREEN);
-	txtAreaSend.setBackground(Color.BLACK);
-	getContentPane().add(txtAreaSend, "cell 0 5 9 4,grow");
-	getContentPane().add(btnLimpar, "cell 9 7 1 2,grow");
-
-	JMenuBar menuBar = new JMenuBar();
-	setJMenuBar(menuBar);
-
-	JMenu mnArquivo = new JMenu("Arquivo");
-	menuBar.add(mnArquivo);
-
-	mntmSalvarComo = new JMenuItem("Salvar como...");
-	mntmSalvarComo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
-	mnArquivo.add(mntmSalvarComo);
-
-	mntmAbrir = new JMenuItem("Abrir...");
-	mntmAbrir.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
-	mntmAbrir.addActionListener(new AbrirAction());
-
-	mntmSalvar = new JMenuItem("Salvar");
-	mntmSalvar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
-	mnArquivo.add(mntmSalvar);
-	mnArquivo.add(mntmAbrir);
-
-	JMenu mnConfiguraes = new JMenu("Configurações");
-	menuBar.add(mnConfiguraes);
-
-	JMenuItem mntmEndereoIp = new JMenuItem("Endereços na rede");
-	mnConfiguraes.add(mntmEndereoIp);
     }
 
 }

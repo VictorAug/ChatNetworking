@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JOptionPane;
+
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
 
@@ -44,7 +46,7 @@ public class ServidorService implements Serializable {
 		new Thread(new ListenerSocket(socket)).start();
 	    }
 	} catch (IOException e) {
-	    e.printStackTrace();
+	    JOptionPane.showMessageDialog(null, "Servidor já está rodando...");
 	}
     }
 
@@ -54,7 +56,7 @@ public class ServidorService implements Serializable {
      */
     private class ListenerSocket implements Runnable {
 
-	/** Executa o envio de mensagem do servidor. */
+	/** Executa o envio de mensagem p/ o(s) cliente(s). */
 	private ObjectOutputStream output;
 
 	/** Recebe a mensagem enviada pelo cliente. */
@@ -82,11 +84,9 @@ public class ServidorService implements Serializable {
 	    ChatMessage message = null;
 	    try {
 		while ((message = (ChatMessage) input.readObject()) != null) {
-		    Action action = message.getAction();
-		    switch (action) {
+		    switch (message.getAction()) {
 			case CONNECT:
-			    boolean isConnect = connect(message, output);
-			    if (isConnect) {
+			    if (connect(message, output)) {
 				mapOnlines.put(message.getName(), output);
 				sendOnlines();
 			    }
