@@ -14,7 +14,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Set;
 
-
 import javax.swing.DefaultListModel;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
@@ -31,7 +30,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 
-
 import net.miginfocom.swing.MigLayout;
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
@@ -40,7 +38,6 @@ import br.iesb.cliente.app.action.SalvarAction;
 import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
 
-// TODO: Auto-generated Javadoc
 /**
  * Class ClienteFrame.
  */
@@ -103,9 +100,14 @@ public class ClienteFrame extends JFrame {
 
     /** Atributo btn limpar. */
     private JButton btnLimpar;
+    
+    /** Atributo mntm abrir. */
     private JMenuItem mntmAbrir;
 
+    /** Atributo mntm salvar como. */
     private JMenuItem mntmSalvarComo;
+    
+    /** Atributo mntm salvar. */
     private JMenuItem mntmSalvar;
 
     /**
@@ -187,17 +189,14 @@ public class ClienteFrame extends JFrame {
 	    JOptionPane.showMessageDialog(this, "Conexão não realizada!\nTente novamente com um novo nome.");
 	    return;
 	}
-
 	this.message = message;
 	this.btnConectar.setEnabled(false);
 	this.txtName.setEditable(false);
-
 	this.btnSair.setEnabled(true);
 	this.txtAreaSend.setEnabled(true);
 	this.txtAreaReceive.setEnabled(true);
 	this.btnEnviar.setEnabled(true);
 	this.btnLimpar.setEnabled(true);
-
 	JOptionPane.showMessageDialog(this, "Você está conectado no chat!");
     }
 
@@ -207,16 +206,13 @@ public class ClienteFrame extends JFrame {
     private void disconnected() {
 	this.btnConectar.setEnabled(true);
 	this.txtName.setEditable(true);
-
 	this.btnSair.setEnabled(false);
 	this.txtAreaSend.setEnabled(false);
 	this.txtAreaReceive.setEnabled(false);
 	this.btnEnviar.setEnabled(false);
 	this.btnLimpar.setEnabled(false);
-
 	this.txtAreaReceive.setText("");
 	this.txtAreaSend.setText("");
-
 	JOptionPane.showMessageDialog(this, "Você saiu do chat!");
     }
 
@@ -239,13 +235,9 @@ public class ClienteFrame extends JFrame {
     @SuppressWarnings("unchecked")
     private void refreshOnlines(ChatMessage message) {
 	System.out.println(message.getSetOnlines().toString());
-
 	Set<String> names = message.getSetOnlines();
-
 	names.remove(message.getName());
-
 	String[] array = (String[]) names.toArray(new String[names.size()]);
-
 	this.listOnlines.setListData(array);
 	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	this.listOnlines.setLayoutOrientation(JList.VERTICAL);
@@ -276,12 +268,9 @@ public class ClienteFrame extends JFrame {
 		this.message = new ChatMessage();
 		this.message.setAction(Action.CONNECT);
 		this.message.setName(name);
-
 		this.service = new ClienteService();
 		this.socket = this.service.connect();
-
 		new Thread(new ListenerSocket(this.socket)).start();
-
 		this.service.send(message);
 	    }
 	});
@@ -326,9 +315,7 @@ public class ClienteFrame extends JFrame {
 	    if (!text.isEmpty()) {
 		this.message.setName(name);
 		this.message.setText(text);
-
 		this.txtAreaReceive.append("Você disse: " + text + "\n");
-
 		this.service.send(this.message);
 	    }
 
@@ -371,7 +358,7 @@ public class ClienteFrame extends JFrame {
 	mntmAbrir = new JMenuItem("Abrir...");
 	mntmAbrir.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 	mntmAbrir.addActionListener(new AbrirAction());
-	
+
 	mntmSalvar = new JMenuItem("Salvar");
 	mntmSalvar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
 	mnArquivo.add(mntmSalvar);
