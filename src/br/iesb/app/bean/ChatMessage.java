@@ -5,7 +5,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Class ChatMessage.
+ * Classe ChatMessage.
+ * <br></br>
+ * Em vez de transferir somente a <code>String</code> de mensagem,
+ * o conteúdo será um objeto que inclui várias informações:<br><br>
+ * <code>String</code>: Nome do cliente<br>
+ * <code>String</code>: Texto da mensagem<br>
+ * <code>String</code>: Nome do cliente que receberá uma mensagem<br>
+ * <code>Set<String></code>: Uma lista com o nome de todos os clientes online. 
  */
 public class ChatMessage implements Serializable {
 
@@ -17,13 +24,16 @@ public class ChatMessage implements Serializable {
     /** Texto da mensagem. */
     private String text;
 
-    /** Nome do cliente que terá uma mensagem do tipo reservada. */
+    /** Nome do cliente que receberá uma mensagem do tipo reservada. */
     private String nameReserved;
 
     /** Lista de todos os cliente online. */
     private Set<String> setOnlines = new HashSet<String>();
 
-    /** Atributo action. */
+    /**
+     * Para cada mensagem que o cliente envia p/ o servidor, ele vai dizer qual
+     * é a ação que deseja executar.
+     */
     private Action action;
 
     public enum Action {

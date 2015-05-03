@@ -16,17 +16,26 @@ import br.iesb.app.bean.ChatMessage.Action;
 
 public class ServidorService implements Serializable {
 
-    /**
-     * 
-     */
+    /** Constante serialVersionUID. */
     private static final long serialVersionUID = 67062559888939165L;
+
+    /** Socket Servidor para abrir uma conexão. */
     private ServerSocket serverSocket;
+
+    /** Socket para receber a solicitação do cliente. */
     private Socket socket;
+
+    /**
+     * Lista de usuários online no chat. <br>
+     * Vai servir p/ redistribuir a mensagem que o usuário digitar p/ todos os
+     * outros. </br></br> <code>String</code> Nome do usuário </br></br>
+     * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
+     */
     private Map<String, ObjectOutputStream> mapOnlines = new HashMap<String, ObjectOutputStream>();
 
     public ServidorService() {
 	try {
-	    serverSocket = new ServerSocket(5555);
+	    serverSocket = new ServerSocket(5555); //
 	    System.out.println("Running Server...");
 	    while (true) {
 		socket = serverSocket.accept();
@@ -37,13 +46,27 @@ public class ServidorService implements Serializable {
 	}
     }
 
+    /**
+     * Classe ListenerSocket.
+     * <br></br>
+     * É o ouvinte do servidor.
+     */
     private class ListenerSocket implements Runnable {
 
-	private ObjectInputStream input;
+	/** Executa o envio de mensagem do servidor. */
 	private ObjectOutputStream output;
+	
+	/** Recebe a mensagem enviada pelo cliente. */
+	private ObjectInputStream input;
 
+	/**
+	 * Instancia um novo listener socket.
+	 *
+	 * @param socket socket da comunicação cliente-servidor estabelecida.
+	 */
 	public ListenerSocket(Socket socket) {
 	    try {
+		// input output agora pertencem exclusivamente do cliente que se conectou.
 		this.output = new ObjectOutputStream(socket.getOutputStream());
 		this.input = new ObjectInputStream(socket.getInputStream());
 	    } catch (IOException e) {
@@ -59,8 +82,7 @@ public class ServidorService implements Serializable {
 		    Action action = message.getAction();
 		    switch (action) {
 			case CONNECT:
-			    boolean isConnect = connect(message, output);
-			    if (isConnect) {
+			    if (connect(message, output)) {
 				mapOnlines.put(message.getName(), output);
 				sendOnlines();
 			    }
@@ -82,7 +104,10 @@ public class ServidorService implements Serializable {
 		    }
 		}
 	    } catch (IOException e) {
+		ChatMessage cm = new ChatMessage();
+		cm.setName(message.getName());
 		disconnect(message, output);
+		sendOnlines();
 		System.out.println(message.getName() + " deixou o chat!");
 	    } catch (ClassNotFoundException e) {
 		e.printStackTrace();
@@ -91,6 +116,13 @@ public class ServidorService implements Serializable {
 
     }
 
+    /**
+     * Connect.
+     *
+     * @param message mensagem recebida pelo servidor
+     * @param output objeto que será enviado pelo servidor
+     * @return true, se a conexão foi estabelecida
+     */
     private boolean connect(ChatMessage message, ObjectOutputStream output) {
 	if (mapOnlines.size() == 0) {
 	    message.setText("YES");
@@ -98,18 +130,15 @@ public class ServidorService implements Serializable {
 	    return true;
 
 	}
-	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    if (kv.getKey().equals(message.getName())) {
-		message.setText("NO");
-		send(message, output);
-		return false;
-	    } else {
-		message.setText("YES");
-		send(message, output);
-		return true;
-	    }
+	if (mapOnlines.containsKey(message.getName())) {
+	    message.setText("NO");
+	    send(message, output);
+	    return false;
+	} else {
+	    message.setText("YES");
+	    send(message, output);
+	    return true;
 	}
-	return false;
     }
 
     private void disconnect(ChatMessage message, ObjectOutputStream output) {
@@ -135,8 +164,8 @@ public class ServidorService implements Serializable {
     private void sendAll(ChatMessage message) {
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    if (!kv.getKey().equals(message.getName())) {
-		message.setAction(Action.SEND_ONE);
 		try {
+		    message.setAction(Action.SEND_ONE);
 		    kv.getValue().writeObject(message);
 		} catch (IOException e) {
 		    e.printStackTrace();
@@ -153,16 +182,19 @@ public class ServidorService implements Serializable {
 	}
     }
 
+    /**
+     * Envia mensagens apenas aos usuário onlines selecionados.
+     */
     private void sendOnlines() {
 	Set<String> setNames = new HashSet<String>();
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    setNames.add(kv.getKey());
 	}
-	
+
 	ChatMessage message = new ChatMessage();
 	message.setAction(Action.USERS_ONLINE);
 	message.setSetOnlines(setNames);
-	
+
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    message.setName(kv.getKey());
 	    try {

@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.swing.AbstractListModel;
+import javax.swing.DefaultListModel;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -32,39 +33,68 @@ import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
 import br.iesb.cliente.app.service.ClienteService;
 
+// TODO: Auto-generated Javadoc
+/**
+ * Class ClienteFrame.
+ */
 @SuppressWarnings({ "unused", "rawtypes" })
 public class ClienteFrame extends JFrame {
 
+    /** Constante serialVersionUID. */
     private static final long serialVersionUID = -7997090265601989938L;
+    
+    /** Atributo socket. */
     private Socket socket;
+    
+    /** Atributo message. */
     private ChatMessage message;
+    
+    /** Atributo service. */
     private ClienteService service;
 
+    /** Atributo txt name. */
     private JTextField txtName;
 
+    /** Atributo reader. */
     private BufferedReader reader;
+    
+    /** Atributo print writer. */
     private PrintWriter printWriter;
 
-    private final int port = 5000;
+    /** Atributo user name. */
     private String userName;
+    
+    /** Atributo user list. */
     private ArrayList<String> userList;
+    
+    /** Atributo is connected. */
     private boolean isConnected = false;
 
+    /** Atributo server socket. */
     private ServerSocket serverSocket;
 
+    /** Atributo print stream. */
     private PrintStream printStream;
+    
+    /** Atributo list onlines. */
     private JList listOnlines;
 
+    /** Atributo txt area receive. */
     private JTextArea txtAreaReceive;
 
+    /** Atributo btn conectar. */
     private JButton btnConectar;
 
+    /** Atributo btn sair. */
     private JButton btnSair;
 
+    /** Atributo txt area send. */
     private JTextArea txtAreaSend;
 
+    /** Atributo btn enviar. */
     private JButton btnEnviar;
 
+    /** Atributo btn limpar. */
     private JButton btnLimpar;
 
     /**
@@ -74,10 +104,19 @@ public class ClienteFrame extends JFrame {
 	initialize();
     }
 
+    /**
+     * Class ListenerSocket.
+     */
     private class ListenerSocket implements Runnable {
 
+	/** Atributo input. */
 	private ObjectInputStream input;
 
+	/**
+	 * Instancia um novo listener socket.
+	 *
+	 * @param socket the socket
+	 */
 	public ListenerSocket(Socket socket) {
 	    try {
 		this.input = new ObjectInputStream(socket.getInputStream());
@@ -86,6 +125,9 @@ public class ClienteFrame extends JFrame {
 	    }
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Runnable#run()
+	 */
 	@Override
 	public void run() {
 	    ChatMessage message = null;
@@ -118,6 +160,11 @@ public class ClienteFrame extends JFrame {
 	}
     }
 
+    /**
+     * Connected.
+     *
+     * @param message the message
+     */
     private void connected(ChatMessage message) {
 	if (message.getText().equals("NO")) {
 	    this.message.setText("");
@@ -139,9 +186,6 @@ public class ClienteFrame extends JFrame {
 
     /**
      * Disconnect.
-     *
-     * @param message
-     *            the message
      */
     private void disconnected() {
 	this.btnConectar.setEnabled(true);
@@ -159,19 +203,30 @@ public class ClienteFrame extends JFrame {
 	JOptionPane.showMessageDialog(this, "Você saiu do chat!");
     }
 
+    /**
+     * Receive.
+     *
+     * @param message the message
+     */
     private void receive(ChatMessage message) {
 	this.txtAreaReceive.append(message.getName() + " diz:  " + message.getText() + "\n");
     }
 
+    /**
+     * Refresh onlines.
+     *
+     * @param message the message
+     */
     @SuppressWarnings("unchecked")
     private void refreshOnlines(ChatMessage message) {
-	if (message.getSetOnlines() == null) {
-	    message.setSetOnlines(new HashSet<String>());
-	}
-
 	System.out.println(message.getSetOnlines().toString());
+	
 	Set<String> names = message.getSetOnlines();
+	
+	names.remove(message.getName());
+	
 	String[] array = (String[]) names.toArray(new String[names.size()]);
+	
 	this.listOnlines.setListData(array);
 	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	this.listOnlines.setLayoutOrientation(JList.VERTICAL);
@@ -180,7 +235,7 @@ public class ClienteFrame extends JFrame {
     /**
      * Initialize the contents of the frame.
      */
-    @SuppressWarnings({ "unchecked", "serial" })
+    @SuppressWarnings("unchecked")
     private void initialize() {
 	getContentPane().setForeground(Color.LIGHT_GRAY);
 	getContentPane().setBackground(Color.DARK_GRAY);
@@ -213,25 +268,17 @@ public class ClienteFrame extends JFrame {
 	btnSair = new JButton("Sair");
 	btnSair.setEnabled(false);
 	btnSair.addActionListener(e -> {
-	    this.message.setAction(Action.DISCONNECT);
-	    this.service.send(this.message);
+	    ChatMessage message = new ChatMessage();
+	    message.setName(this.message.getName());
+	    message.setAction(Action.DISCONNECT);
+	    this.service.send(message);
 	    disconnected();
 	});
 	getContentPane().add(btnSair, "cell 9 1,grow");
 
 	listOnlines = new JList();
 	listOnlines.setSelectionMode(DefaultListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-	listOnlines.setModel(new AbstractListModel() {
-	    String[] values = new String[] {};
-
-	    public int getSize() {
-		return values.length;
-	    }
-
-	    public Object getElementAt(int index) {
-		return values[index];
-	    }
-	});
+	listOnlines.setModel(new DefaultListModel<String>());
 	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
 	listOnlines.setBackground(Color.BLACK);
 	listOnlines.setForeground(Color.YELLOW);
