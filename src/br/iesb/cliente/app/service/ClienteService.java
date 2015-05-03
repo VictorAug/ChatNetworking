@@ -21,14 +21,19 @@ public class ClienteService implements Serializable {
     
     public Socket connect() {
 	try {
-	    this.socket = new Socket("192.168.56.1", 5555);
-	    this.output = new ObjectOutputStream(socket.getOutputStream());
+    	    this.socket = new Socket("localhost", 5555);
+    	    this.output = new ObjectOutputStream(socket.getOutputStream());
 	} catch (UnknownHostException e) {
 	    e.printStackTrace();
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
 	return socket;
+    }
+    
+    public void setHostServer(String host) {
+	// TODO Altera o servidor
+	
     }
     
     public void send(ChatMessage message) {

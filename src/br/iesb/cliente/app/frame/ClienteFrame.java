@@ -2,6 +2,7 @@ package br.iesb.cliente.app.frame;
 
 import java.awt.Color;
 import java.awt.Event;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -37,6 +39,8 @@ import br.iesb.cliente.app.action.AbrirAction;
 import br.iesb.cliente.app.action.SalvarAction;
 import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
+import br.iesb.servidor.app.service.ServidorService;
+
 import javax.swing.JLabel;
 import javax.swing.JToolBar;
 import javax.swing.JTextPane;
@@ -115,9 +119,9 @@ public class ClienteFrame extends JFrame {
     private JLabel lblServidor;
     private JLabel lblCliente;
     private JLabel lblUsurio;
-    private JButton btnNewButton;
-    private JTextPane textPane;
-    private JTextPane textPane_1;
+    private JButton btnEscolherArquivo;
+    private JLabel lblIpServidor;
+    private JLabel lblIpCliente;
 
     /**
      * Create the application.
@@ -135,7 +139,7 @@ public class ClienteFrame extends JFrame {
 	getContentPane().setBackground(Color.DARK_GRAY);
 	setBounds(100, 100, 980, 720);
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	getContentPane().setLayout(new MigLayout("", "[][fill][][16.00][grow][40][20][20][20][40][0.01][50][grow][][50]", "[20][][][20.00][grow][][][15][15][15][15]"));
+	getContentPane().setLayout(new MigLayout("", "[][fill][][16.00][grow][40][20][20][20][40][0.01][50][][][50]", "[20][][][20.00][grow][][][15][15][15][15]"));
 
 	lblUsurio = new JLabel("Usuário: ");
 	lblUsurio.setForeground(Color.LIGHT_GRAY);
@@ -169,7 +173,6 @@ public class ClienteFrame extends JFrame {
 		new Thread(new ListenerSocket(this.socket)).start();
 		this.service.send(message);
 	    }
-	    lblServidor.setForeground(Color.green);
 	});
 	getContentPane().add(btnConectar, "cell 8 0,grow");
 	getContentPane().add(btnSair, "cell 9 0,grow");
@@ -177,12 +180,13 @@ public class ClienteFrame extends JFrame {
 	listOnlines = new JList();
 	listOnlines.setSelectionMode(DefaultListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 	listOnlines.setModel(new DefaultListModel<String>());
-	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
+	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
 	listOnlines.setBackground(Color.BLACK);
 	listOnlines.setForeground(Color.YELLOW);
 	getContentPane().add(listOnlines, "cell 11 0 4 9,grow");
 
 	txtAreaReceive = new JTextArea();
+	txtAreaReceive.setBorder(new TitledBorder(null, "Chat", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
 	txtAreaReceive.setEditable(false);
 	txtAreaReceive.setEnabled(false);
 	txtAreaReceive.setForeground(Color.CYAN);
@@ -190,10 +194,18 @@ public class ClienteFrame extends JFrame {
 	getContentPane().add(txtAreaReceive, "cell 0 1 11 4,grow");
 
 	txtAreaSend = new JTextArea();
+	txtAreaSend.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Mensagem", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
 	txtAreaSend.setEnabled(false);
 	txtAreaSend.setForeground(Color.GREEN);
 	txtAreaSend.setBackground(Color.BLACK);
-	getContentPane().add(txtAreaSend, "cell 0 5 11 4,grow");
+	getContentPane().add(txtAreaSend, "cell 0 5 11 5,grow");
+
+	lblServidor = new JLabel("Servidor:");
+	lblServidor.setForeground(Color.lightGray);
+	getContentPane().add(lblServidor, "cell 11 9,grow");
+
+	lblIpServidor = new JLabel("");
+	getContentPane().add(lblIpServidor, "cell 12 9 3 1");
 
 	btnEnviar = new JButton("Enviar");
 	btnEnviar.setEnabled(false);
@@ -222,35 +234,25 @@ public class ClienteFrame extends JFrame {
 	    mntmSalvarComo.addActionListener(new SalvarComoAction(this, txtAreaReceive));
 	    mntmSalvar.addActionListener(new SalvarAction(this, message, txtAreaReceive));
 	});
+	getContentPane().add(btnEnviar, "cell 0 10,grow");
 
 	btnLimpar = new JButton("Limpar");
 	btnLimpar.setEnabled(false);
 	btnLimpar.addActionListener(e -> {
-	    this.txtAreaReceive.setText("");
+	    this.txtAreaSend.setText("");
 	});
-	getContentPane().add(btnLimpar, "cell 5 9,grow");
+	getContentPane().add(btnLimpar, "cell 2 10,grow");
 
-	btnNewButton = new JButton("Escolher arquivo...");
-	getContentPane().add(btnNewButton, "cell 7 9");
-	getContentPane().add(btnEnviar, "cell 9 9,grow");
-
-	lblServidor = new JLabel("Servidor:");
-	lblServidor.setForeground(Color.lightGray);
-	getContentPane().add(lblServidor, "cell 11 9,grow");
-
-	textPane = new JTextPane();
-	textPane.setBackground(Color.darkGray);
-	textPane.setForeground(Color.green);
-	getContentPane().add(textPane, "cell 12 9 3 1,grow");
+	btnEscolherArquivo = new JButton("Escolher arquivo...");
+	getContentPane().add(btnEscolherArquivo, "cell 9 10");
 
 	lblCliente = new JLabel("Cliente: ");
 	lblCliente.setForeground(Color.lightGray);
 	getContentPane().add(lblCliente, "cell 11 10,grow");
 
-	textPane_1 = new JTextPane();
-	textPane_1.setBackground(Color.darkGray);
-	textPane_1.setForeground(Color.red);
-	getContentPane().add(textPane_1, "cell 12 10 3 1,grow");
+	lblIpCliente = new JLabel("");
+	lblIpCliente.setForeground(Color.green);
+	getContentPane().add(lblIpCliente, "cell 12 10 3 1,grow");
 
 	JMenuBar menuBar = new JMenuBar();
 	setJMenuBar(menuBar);
@@ -273,9 +275,6 @@ public class ClienteFrame extends JFrame {
 
 	JMenu mnConfiguraes = new JMenu("Configurações");
 	menuBar.add(mnConfiguraes);
-
-	JMenuItem mntmEndereoIp = new JMenuItem("Endereços na rede");
-	mnConfiguraes.add(mntmEndereoIp);
     }
 
     /**
@@ -295,7 +294,13 @@ public class ClienteFrame extends JFrame {
 	public ListenerSocket(Socket socket) {
 	    try {
 		this.input = new ObjectInputStream(socket.getInputStream());
-	    } catch (IOException e) {
+		lblServidor.setForeground(Color.green);
+		lblIpServidor.setText(socket.getLocalSocketAddress().toString());
+		lblIpServidor.setForeground(Color.green);
+		lblCliente.setForeground(Color.green);
+		lblIpCliente.setText(socket.getLocalAddress().toString());
+	    } catch (Exception e) {
+		JOptionPane.showMessageDialog(null, "Servidor offline...");
 		e.printStackTrace();
 	    }
 	}
@@ -332,7 +337,10 @@ public class ClienteFrame extends JFrame {
 	    } catch (ClassNotFoundException e) {
 		e.printStackTrace();
 	    } catch (IOException e) {
-		e.printStackTrace();
+		JOptionPane.showMessageDialog(null, "Servidor caiu ou excedeu o tempo de estabelecimento da conexão...");
+		lblServidor.setForeground(Color.red);
+		lblIpServidor.setForeground(Color.red);
+		disconnected();
 	    }
 	}
     }

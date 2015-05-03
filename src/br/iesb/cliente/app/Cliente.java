@@ -34,7 +34,6 @@ public class Cliente implements Serializable {
 	} catch (javax.swing.UnsupportedLookAndFeelException ex) {
 	    ex.printStackTrace();
 	}
-	// </editor-fold>
 
 	/* Create and display the form */
 	EventQueue.invokeLater(() -> new ClienteFrame().setVisible(true));
