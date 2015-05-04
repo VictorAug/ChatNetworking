@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Event;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -116,12 +117,10 @@ public class ClienteFrame extends JFrame {
 
     /** Atributo mntm salvar. */
     private JMenuItem mntmSalvar;
-    private JLabel lblServidor;
-    private JLabel lblCliente;
     private JLabel lblUsurio;
     private JButton btnEscolherArquivo;
-    private JLabel lblIpServidor;
-    private JLabel lblIpCliente;
+    private JMenu mnAjuda;
+    private JMenuItem mntmInformaesDaRede;
 
     /**
      * Create the application.
@@ -183,7 +182,7 @@ public class ClienteFrame extends JFrame {
 	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
 	listOnlines.setBackground(Color.BLACK);
 	listOnlines.setForeground(Color.YELLOW);
-	getContentPane().add(listOnlines, "cell 11 0 4 9,grow");
+	getContentPane().add(listOnlines, "cell 11 0 4 11,grow");
 
 	txtAreaReceive = new JTextArea();
 	txtAreaReceive.setBorder(new TitledBorder(null, "Chat", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
@@ -199,13 +198,6 @@ public class ClienteFrame extends JFrame {
 	txtAreaSend.setForeground(Color.GREEN);
 	txtAreaSend.setBackground(Color.BLACK);
 	getContentPane().add(txtAreaSend, "cell 0 5 11 5,grow");
-
-	lblServidor = new JLabel("Servidor:");
-	lblServidor.setForeground(Color.lightGray);
-	getContentPane().add(lblServidor, "cell 11 9,grow");
-
-	lblIpServidor = new JLabel("");
-	getContentPane().add(lblIpServidor, "cell 12 9 3 1");
 
 	btnEnviar = new JButton("Enviar");
 	btnEnviar.setEnabled(false);
@@ -246,14 +238,6 @@ public class ClienteFrame extends JFrame {
 	btnEscolherArquivo = new JButton("Escolher arquivo...");
 	getContentPane().add(btnEscolherArquivo, "cell 9 10");
 
-	lblCliente = new JLabel("Cliente: ");
-	lblCliente.setForeground(Color.lightGray);
-	getContentPane().add(lblCliente, "cell 11 10,grow");
-
-	lblIpCliente = new JLabel("");
-	lblIpCliente.setForeground(Color.green);
-	getContentPane().add(lblIpCliente, "cell 12 10 3 1,grow");
-
 	JMenuBar menuBar = new JMenuBar();
 	setJMenuBar(menuBar);
 
@@ -275,6 +259,19 @@ public class ClienteFrame extends JFrame {
 
 	JMenu mnConfiguraes = new JMenu("Configurações");
 	menuBar.add(mnConfiguraes);
+
+	mnAjuda = new JMenu("Ajuda");
+	menuBar.add(mnAjuda);
+
+	mntmInformaesDaRede = new JMenuItem("Informações da rede");
+	mntmInformaesDaRede.addActionListener(new ActionListener() {
+
+	    @Override
+	    public void actionPerformed(ActionEvent e) {
+		JOptionPane.showMessageDialog(null, "IP do Servidor: " + socket.getInetAddress().toString() + "\nIP do cliente: " + socket.getLocalAddress().toString(), "Informações da rede", JOptionPane.DEFAULT_OPTION);
+	    }
+	});
+	mnAjuda.add(mntmInformaesDaRede);
     }
 
     /**
@@ -294,11 +291,6 @@ public class ClienteFrame extends JFrame {
 	public ListenerSocket(Socket socket) {
 	    try {
 		this.input = new ObjectInputStream(socket.getInputStream());
-		lblServidor.setForeground(Color.green);
-		lblIpServidor.setText(socket.getLocalSocketAddress().toString());
-		lblIpServidor.setForeground(Color.green);
-		lblCliente.setForeground(Color.green);
-		lblIpCliente.setText(socket.getLocalAddress().toString());
 	    } catch (Exception e) {
 		JOptionPane.showMessageDialog(null, "Servidor offline...");
 		e.printStackTrace();
@@ -338,8 +330,6 @@ public class ClienteFrame extends JFrame {
 		e.printStackTrace();
 	    } catch (IOException e) {
 		JOptionPane.showMessageDialog(null, "Servidor caiu ou excedeu o tempo de estabelecimento da conexão...");
-		lblServidor.setForeground(Color.red);
-		lblIpServidor.setForeground(Color.red);
 		disconnected();
 	    }
 	}

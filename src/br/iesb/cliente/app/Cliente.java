@@ -4,6 +4,7 @@ import java.awt.EventQueue;
 import java.io.Serializable;
 
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import br.iesb.cliente.app.frame.ClienteFrame;
 
@@ -31,7 +32,7 @@ public class Cliente implements Serializable {
 	    ex.printStackTrace();
 	} catch (IllegalAccessException ex) {
 	    ex.printStackTrace();
-	} catch (javax.swing.UnsupportedLookAndFeelException ex) {
+	} catch (UnsupportedLookAndFeelException ex) {
 	    ex.printStackTrace();
 	}
 
