@@ -10,7 +10,7 @@ import javax.swing.Action;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
-import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class AbrirAction extends AbstractAction {
 
@@ -35,30 +35,11 @@ public class AbrirAction extends AbstractAction {
      * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent actionEvent) {
-	JFileChooser fileChooser = new JFileChooser();
+	JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.dir")));
 	fileChooser.setMultiSelectionEnabled(true);
-	fileChooser.setSelectedFile(new File("database"));
-	fileChooser.setFileFilter(new FileFilter() {
-	    
-	    private final String[] okFileExtensions = new String[]{"txt", "doc", "docx"};
-	    
-	    @Override
-	    public String getDescription() {
-		return okFileExtensions.toString();
-	    }
-	    
-	    @Override
-	    public boolean accept(File file) {
-		for (String extension : okFileExtensions) {
-		    if (file.getName().toLowerCase().endsWith(extension)) {
-			return true;
-		    }
-		}
-		return false;
-	    }
-	});
-	int resp = fileChooser.showOpenDialog(textArea);
-	if (resp != JFileChooser.APPROVE_OPTION) {
+	fileChooser.setFileFilter(new FileNameExtensionFilter("txt files (*txt)", "txt"));
+	int res = fileChooser.showOpenDialog(textArea);
+	if (res != JFileChooser.APPROVE_OPTION) {
 	    return;
 	}
 	openFile(fileChooser.getSelectedFile());

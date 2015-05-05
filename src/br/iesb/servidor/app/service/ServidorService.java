@@ -1,5 +1,6 @@
 package br.iesb.servidor.app.service;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -36,6 +37,8 @@ public class ServidorService implements Serializable {
 	 * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
 	 */
 	private Map<String, ObjectOutputStream> mapOnlines = new HashMap<String, ObjectOutputStream>();
+	
+	private Map<String, FileOutputStream> mapFiles = new HashMap<String, FileOutputStream>();
 
 	public ServidorService() {
 		try {
