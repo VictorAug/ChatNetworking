@@ -339,7 +339,7 @@ public class ClienteFrame extends JFrame {
 			} catch (IOException e) {
 				if (message.getSetOnlines().isEmpty()) {
 					JOptionPane.showMessageDialog(null, "Servidor encerrado");
-					// fechar a janela cliente
+					System.exit(0);
 				} else {
 					JOptionPane.showMessageDialog(null, "Servidor caiu ou excedeu o tempo de estabelecimento da conexão...");
 					disconnected();

@@ -48,7 +48,6 @@ public class ServidorService implements Serializable {
 		} catch (IOException e) {
 			if(!(mapOnlines.isEmpty()))
 				JOptionPane.showMessageDialog(null, "Servidor já está rodando...");
-			//tratar quando estah vazia
 		}
 	}
 
