@@ -1,5 +1,6 @@
 package br.iesb.app.bean;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,6 +30,8 @@ public class ChatMessage implements Serializable {
 
     /** Lista de todos os cliente online. */
     private Set<String> setOnlines = new HashSet<String>();
+    
+    private Set<File> setFiles = new HashSet<File>();
 
     /**
      * Para cada mensagem que o cliente envia p/ o servidor, ele vai dizer qual
@@ -37,7 +40,7 @@ public class ChatMessage implements Serializable {
     private Action action;
 
     public enum Action {
-	CONNECT, DISCONNECT, SEND_ONE, SEND_ALL, USERS_ONLINE;
+	CONNECT, DISCONNECT, SEND_ONE, SEND_ALL, USERS_ONLINE, SEND_FILE;
     }
 
     public String getName() {
@@ -78,6 +81,14 @@ public class ChatMessage implements Serializable {
 
     public void setAction(Action action) {
 	this.action = action;
+    }
+
+    public Set<File> getSetFiles() {
+	return setFiles;
+    }
+
+    public void setSetFiles(Set<File> setFiles) {
+	this.setFiles = setFiles;
     }
 
 }

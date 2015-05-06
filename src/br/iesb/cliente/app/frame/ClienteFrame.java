@@ -1,17 +1,14 @@
 package br.iesb.cliente.app.frame;
 
 import java.awt.Color;
-import java.awt.Event;
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -26,12 +23,15 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.text.DefaultCaret;
 
 import net.miginfocom.swing.MigLayout;
 import br.iesb.app.bean.ChatMessage;
@@ -41,11 +41,8 @@ import br.iesb.cliente.app.action.EscolherArquivoAction;
 import br.iesb.cliente.app.action.SalvarAction;
 import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
-import br.iesb.servidor.app.service.ServidorService;
 
-import javax.swing.JLabel;
-import javax.swing.JToolBar;
-import javax.swing.JTextPane;
+import java.awt.Font;
 
 /**
  * Class ClienteFrame.
@@ -93,7 +90,7 @@ public class ClienteFrame extends JFrame {
     private JList listOnlines;
 
     /** Atributo txt area receive. */
-    private JTextArea txtAreaReceive;
+    private JScrollPane scrollReceive;
 
     /** Atributo btn conectar. */
     private JButton btnConectar;
@@ -102,7 +99,7 @@ public class ClienteFrame extends JFrame {
     private JButton btnSair;
 
     /** Atributo txt area send. */
-    private JTextArea txtAreaSend;
+    private JScrollPane scrollSend;
 
     /** Atributo btn enviar. */
     private JButton btnEnviar;
@@ -118,10 +115,13 @@ public class ClienteFrame extends JFrame {
 
     /** Atributo mntm salvar. */
     private JMenuItem mntmSalvar;
-    private JLabel lblUsurio;
     private JButton btnEscolherArquivo;
     private JMenu mnAjuda;
     private JMenuItem mntmInformaesDaRede;
+    private JList listRepoOnline;
+    private JScrollPane scrollPane;
+    private JTextArea txtAreaSend;
+    private JTextArea txtAreaReceive;
 
     /**
      * Create the application.
@@ -135,20 +135,23 @@ public class ClienteFrame extends JFrame {
      */
     @SuppressWarnings("unchecked")
     private void initialize() {
+	UIManager.put("TitledBorder.border", new LineBorder(Color.lightGray, 1));
+
+	this.setTitle("ChatNetworking");
+
 	getContentPane().setForeground(Color.LIGHT_GRAY);
-	getContentPane().setBackground(Color.DARK_GRAY);
+	getContentPane().setBackground(Color.black);
 	setBounds(100, 100, 980, 720);
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	getContentPane().setLayout(new MigLayout("", "[][fill][][16.00][grow][40][20][20][20][40][0.01][50][][][50]", "[20][][][20.00][grow][][][15][15][15][15]"));
-
-	lblUsurio = new JLabel("Usuário: ");
-	lblUsurio.setForeground(Color.LIGHT_GRAY);
-	getContentPane().add(lblUsurio, "cell 0 0,grow");
+	getContentPane().setLayout(new MigLayout("", "[150][fill][][16.00][][grow][40][20][20][20][30][30][0.01][50][][][50]", "[5][15][5][][][20.00][grow][40][][][15][15][15][15]"));
 
 	txtName = new JTextField();
+	txtName.setCaretColor(Color.ORANGE);
+	txtName.setFont(new Font("Monospaced", Font.BOLD, 11));
+	txtName.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Usu\u00E1rio", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
 	txtName.setForeground(new Color(255, 165, 0));
 	txtName.setBackground(Color.BLACK);
-	getContentPane().add(txtName, "cell 1 0 7 1,grow");
+	getContentPane().add(txtName, "cell 0 0 10 3,grow");
 	txtName.setColumns(10);
 
 	btnSair = new JButton("Sair");
@@ -159,7 +162,6 @@ public class ClienteFrame extends JFrame {
 	    message.setAction(Action.DISCONNECT);
 	    this.service.send(message);
 	    disconnected();
-	    System.exit(0);
 	});
 
 	btnConectar = new JButton("Conectar");
@@ -175,8 +177,8 @@ public class ClienteFrame extends JFrame {
 		this.service.send(message);
 	    }
 	});
-	getContentPane().add(btnConectar, "cell 8 0,grow");
-	getContentPane().add(btnSair, "cell 9 0,grow");
+	getContentPane().add(btnConectar, "cell 10 1,grow");
+	getContentPane().add(btnSair, "cell 11 1,grow");
 
 	listOnlines = new JList();
 	listOnlines.setSelectionMode(DefaultListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -184,22 +186,47 @@ public class ClienteFrame extends JFrame {
 	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
 	listOnlines.setBackground(Color.BLACK);
 	listOnlines.setForeground(Color.YELLOW);
-	getContentPane().add(listOnlines, "cell 11 0 4 11,grow");
+	getContentPane().add(listOnlines, "cell 13 0 4 14,grow");
+
+	scrollReceive = new JScrollPane();
+	scrollReceive.setBorder(new TitledBorder(null, "Chat", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
+	scrollReceive.setEnabled(false);
+	scrollReceive.setForeground(Color.CYAN);
+	scrollReceive.setBackground(Color.BLACK);
+	getContentPane().add(scrollReceive, "cell 3 3 10 4,grow");
 
 	txtAreaReceive = new JTextArea();
-	txtAreaReceive.setBorder(new TitledBorder(null, "Chat", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
-	txtAreaReceive.setEditable(false);
-	txtAreaReceive.setEnabled(false);
+	txtAreaReceive.setCaretColor(Color.CYAN);
+	txtAreaReceive.setFont(new Font("Monospaced", Font.ITALIC, 13));
 	txtAreaReceive.setForeground(Color.CYAN);
 	txtAreaReceive.setBackground(Color.BLACK);
-	getContentPane().add(txtAreaReceive, "cell 0 1 11 4,grow");
+	scrollReceive.setViewportView(txtAreaReceive);
+
+	listRepoOnline = new JList();
+	listRepoOnline.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+	listRepoOnline.setForeground(Color.YELLOW);
+	listRepoOnline.setModel(new DefaultListModel<String>());
+	listRepoOnline.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Reposit\u00F3rio Online", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
+	listRepoOnline.setBackground(Color.BLACK);
+	getContentPane().add(listRepoOnline, "cell 0 3 3 11,grow");
+
+	scrollSend = new JScrollPane();
+	scrollSend.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Mensagem", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
+	scrollSend.setEnabled(false);
+	scrollSend.setForeground(Color.GREEN);
+	scrollSend.setBackground(Color.BLACK);
+	getContentPane().add(scrollSend, "flowx,cell 3 7 10 6,grow");
 
 	txtAreaSend = new JTextArea();
-	txtAreaSend.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Mensagem", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
-	txtAreaSend.setEnabled(false);
+	txtAreaSend.setFont(new Font("Monospaced", Font.BOLD, 13));
 	txtAreaSend.setForeground(Color.GREEN);
+	txtAreaSend.setCaretColor(Color.GREEN);
+	txtAreaSend.setDisabledTextColor(new Color(109, 109, 109));
 	txtAreaSend.setBackground(Color.BLACK);
-	getContentPane().add(txtAreaSend, "cell 0 5 11 5,grow");
+	scrollSend.setViewportView(txtAreaSend);
+
+	btnEscolherArquivo = new JButton("Escolher arquivo...");
+	btnEscolherArquivo.addActionListener(new EscolherArquivoAction());
 
 	btnEnviar = new JButton("Enviar");
 	btnEnviar.setEnabled(false);
@@ -228,18 +255,15 @@ public class ClienteFrame extends JFrame {
 	    mntmSalvarComo.addActionListener(new SalvarComoAction(this, txtAreaReceive));
 	    mntmSalvar.addActionListener(new SalvarAction(this, message, txtAreaReceive));
 	});
-	getContentPane().add(btnEnviar, "cell 0 10,grow");
+	getContentPane().add(btnEnviar, "cell 3 13,grow");
 
 	btnLimpar = new JButton("Limpar");
 	btnLimpar.setEnabled(false);
 	btnLimpar.addActionListener(e -> {
 	    this.txtAreaSend.setText("");
 	});
-	getContentPane().add(btnLimpar, "cell 2 10,grow");
-
-	btnEscolherArquivo = new JButton("Escolher arquivo...");
-	btnEscolherArquivo.addActionListener(new EscolherArquivoAction());
-	getContentPane().add(btnEscolherArquivo, "cell 9 10");
+	getContentPane().add(btnLimpar, "cell 4 13,grow");
+	getContentPane().add(btnEscolherArquivo, "cell 10 13 2 1");
 
 	JMenuBar menuBar = new JMenuBar();
 	setJMenuBar(menuBar);
@@ -267,8 +291,8 @@ public class ClienteFrame extends JFrame {
 	menuBar.add(mnAjuda);
 
 	mntmInformaesDaRede = new JMenuItem("Informações da rede");
-	mntmInformaesDaRede.addActionListener(e -> JOptionPane.showMessageDialog(null, "IP do Servidor: " + socket.getInetAddress().toString() + "\nIP do cliente: "
-		+ socket.getLocalAddress().toString(), "Informações da rede", JOptionPane.DEFAULT_OPTION));
+	mntmInformaesDaRede.addActionListener(e -> JOptionPane.showMessageDialog(null, "IP do Servidor: " + this.service.getServerIP() + "\nIP do cliente: " + this.service.getClientIP(),
+		"Informações da rede", JOptionPane.DEFAULT_OPTION));
 	mnAjuda.add(mntmInformaesDaRede);
     }
 
@@ -328,11 +352,11 @@ public class ClienteFrame extends JFrame {
 		e.printStackTrace();
 	    } catch (IOException e) {
 		if (message.getSetOnlines().isEmpty()) {
-			JOptionPane.showMessageDialog(null, "Servidor encerrado");
-			System.exit(0);
+		    JOptionPane.showMessageDialog(null, "Servidor encerrado");
+		    System.exit(0);
 		} else {
-			JOptionPane.showMessageDialog(null, "Servidor caiu ou excedeu o tempo de estabelecimento da conexão...");
-			disconnected();
+		    JOptionPane.showMessageDialog(null, "Servidor caiu ou excedeu o tempo de estabelecimento da conexão...");
+		    disconnected();
 		}
 	    }
 	}
@@ -354,8 +378,9 @@ public class ClienteFrame extends JFrame {
 	this.btnConectar.setEnabled(false);
 	this.txtName.setEditable(false);
 	this.btnSair.setEnabled(true);
+	this.scrollSend.setEnabled(true);
 	this.txtAreaSend.setEnabled(true);
-	this.txtAreaReceive.setEnabled(true);
+	this.scrollReceive.setEnabled(true);
 	this.btnEnviar.setEnabled(true);
 	this.btnLimpar.setEnabled(true);
 	JOptionPane.showMessageDialog(this, "Você está conectado no chat!");
@@ -368,7 +393,9 @@ public class ClienteFrame extends JFrame {
 	this.btnConectar.setEnabled(true);
 	this.txtName.setEditable(true);
 	this.btnSair.setEnabled(false);
+	this.scrollSend.setEnabled(false);
 	this.txtAreaSend.setEnabled(false);
+	this.scrollReceive.setEnabled(false);
 	this.txtAreaReceive.setEnabled(false);
 	this.btnEnviar.setEnabled(false);
 	this.btnLimpar.setEnabled(false);
