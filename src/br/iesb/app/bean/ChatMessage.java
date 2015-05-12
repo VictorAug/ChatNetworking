@@ -6,14 +6,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Classe ChatMessage.
- * <br></br>
- * Em vez de transferir somente a <code>String</code> de mensagem,
- * o conteúdo será um objeto que inclui várias informações:<br><br>
+ * Classe ChatMessage. <br>
+ * </br> Em vez de transferir somente a <code>String</code> de mensagem, o
+ * conteúdo será um objeto que inclui várias informações:<br>
+ * <br>
  * <code>String</code>: Nome do cliente<br>
  * <code>String</code>: Texto da mensagem<br>
  * <code>String</code>: Nome do cliente que receberá uma mensagem<br>
- * <code>Set<String></code>: Uma lista com o nome de todos os clientes online. 
+ * <code>Set<String></code>: Uma lista com o nome de todos os clientes online.
  */
 public class ChatMessage implements Serializable {
 
@@ -30,7 +30,7 @@ public class ChatMessage implements Serializable {
 
     /** Lista de todos os cliente online. */
     private Set<String> setOnlines = new HashSet<String>();
-    
+
     private Set<File> setFiles = new HashSet<File>();
 
     /**
@@ -41,6 +41,9 @@ public class ChatMessage implements Serializable {
 
     public enum Action {
 	CONNECT, DISCONNECT, SEND_ONE, SEND_ALL, USERS_ONLINE, SEND_FILE;
+    }
+    
+    public ChatMessage() {
     }
 
     public String getName() {
@@ -86,9 +89,11 @@ public class ChatMessage implements Serializable {
     public Set<File> getSetFiles() {
 	return setFiles;
     }
-
-    public void setSetFiles(Set<File> setFiles) {
-	this.setFiles = setFiles;
+    
+    public void addFiles(File[] files) {
+	for (int i = 0; i < files.length; i++) {
+	    this.setFiles.add(files[i]);
+	}
     }
 
 }

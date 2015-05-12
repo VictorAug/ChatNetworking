@@ -1,6 +1,5 @@
 package br.iesb.cliente.app.service;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -19,8 +18,6 @@ public class ClienteService implements Serializable {
 
     /** Objeto com o conteúdo da mensagem a ser enviada ao servidor. */
     private ObjectOutputStream output;
-
-    private FileOutputStream fileOutput;
 
     public Socket connect() {
 	try {
@@ -47,10 +44,20 @@ public class ClienteService implements Serializable {
 	}
     }
 
+    /**
+     * Retorna o IP do cliente.
+     *
+     * @return client ip
+     */
     public SocketAddress getClientIP() {
 	return socket.getLocalSocketAddress();
     }
 
+    /**
+     * Retorna o IP do servidor.
+     *
+     * @return server ip
+     */
     public SocketAddress getServerIP() {
 	return socket.getRemoteSocketAddress();
     }

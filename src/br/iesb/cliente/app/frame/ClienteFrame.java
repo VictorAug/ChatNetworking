@@ -4,7 +4,11 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintStream;
@@ -12,11 +16,13 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import javax.swing.DefaultListModel;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JMenu;
@@ -27,10 +33,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.DefaultCaret;
 
 import net.miginfocom.swing.MigLayout;
@@ -47,73 +57,32 @@ import java.awt.Font;
 /**
  * Class ClienteFrame.
  */
-@SuppressWarnings({ "unused", "rawtypes" })
+@SuppressWarnings({ "unused", "rawtypes", "unchecked" })
 public class ClienteFrame extends JFrame {
 
     /** Constante serialVersionUID. */
     private static final long serialVersionUID = -7997090265601989938L;
 
-    /** Atributo socket. */
     private Socket socket;
-
-    /** Atributo message. */
     private ChatMessage message;
-
-    /** Atributo service. */
     private ClienteService service;
-
-    /** Atributo txt name. */
     private JTextField txtName;
-
-    /** Atributo reader. */
     private BufferedReader reader;
-
-    /** Atributo print writer. */
     private PrintWriter printWriter;
-
-    /** Atributo user name. */
     private String userName;
-
-    /** Atributo user list. */
     private ArrayList<String> userList;
-
-    /** Atributo is connected. */
     private boolean isConnected = false;
-
-    /** Atributo server socket. */
     private ServerSocket serverSocket;
-
-    /** Atributo print stream. */
     private PrintStream printStream;
-
-    /** Atributo list onlines. */
     private JList listOnlines;
-
-    /** Atributo txt area receive. */
     private JScrollPane scrollReceive;
-
-    /** Atributo btn conectar. */
     private JButton btnConectar;
-
-    /** Atributo btn sair. */
     private JButton btnSair;
-
-    /** Atributo txt area send. */
     private JScrollPane scrollSend;
-
-    /** Atributo btn enviar. */
     private JButton btnEnviar;
-
-    /** Atributo btn limpar. */
     private JButton btnLimpar;
-
-    /** Atributo mntm abrir. */
     private JMenuItem mntmAbrir;
-
-    /** Atributo mntm salvar como. */
     private JMenuItem mntmSalvarComo;
-
-    /** Atributo mntm salvar. */
     private JMenuItem mntmSalvar;
     private JButton btnEscolherArquivo;
     private JMenu mnAjuda;
@@ -133,11 +102,10 @@ public class ClienteFrame extends JFrame {
     /**
      * Initialize the contents of the frame.
      */
-    @SuppressWarnings("unchecked")
     private void initialize() {
 	UIManager.put("TitledBorder.border", new LineBorder(Color.lightGray, 1));
 
-	this.setTitle("ChatNetworking");
+	this.setTitle("BarbozAugusto's ChatNetworking");
 
 	getContentPane().setForeground(Color.LIGHT_GRAY);
 	getContentPane().setBackground(Color.black);
@@ -225,8 +193,31 @@ public class ClienteFrame extends JFrame {
 	txtAreaSend.setBackground(Color.BLACK);
 	scrollSend.setViewportView(txtAreaSend);
 
-	btnEscolherArquivo = new JButton("Escolher arquivo...");
-	btnEscolherArquivo.addActionListener(new EscolherArquivoAction());
+	btnEscolherArquivo = new JButton("Enviar arquivo...");
+	btnEscolherArquivo.addActionListener(e -> {
+	    JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.dir")));
+	    fileChooser.setMultiSelectionEnabled(true);
+	    fileChooser.setAcceptAllFileFilterUsed(false);
+	    fileChooser.setFileFilter(new FileNameExtensionFilter("image files (*jpg)", "jpg"));
+	    int res = fileChooser.showOpenDialog(new JTextArea());
+	    if (res != JFileChooser.APPROVE_OPTION) {
+		return;
+	    }
+	    System.out.println("File name: " + fileChooser.getSelectedFile().getName());
+	    String name = this.message.getName();
+	    this.message = new ChatMessage();
+	    this.message.setName(name);
+	    this.message.setAction(Action.SEND_FILE);
+	    this.message.addFiles(fileChooser.getSelectedFiles());
+	    this.service.send(this.message);
+	    Set<File> setFiles = this.message.getSetFiles();
+	    String[] fileNames = new String[setFiles.size()];
+	    int i = 0;
+	    for (File file : setFiles) {
+		fileNames[i++] = file.getName();
+	    }
+	    this.listRepoOnline.setListData(fileNames);
+	});
 
 	btnEnviar = new JButton("Enviar");
 	btnEnviar.setEnabled(false);
@@ -263,7 +254,7 @@ public class ClienteFrame extends JFrame {
 	    this.txtAreaSend.setText("");
 	});
 	getContentPane().add(btnLimpar, "cell 4 13,grow");
-	getContentPane().add(btnEscolherArquivo, "cell 10 13 2 1");
+	getContentPane().add(btnEscolherArquivo, "cell 10 13 2 1,grow");
 
 	JMenuBar menuBar = new JMenuBar();
 	setJMenuBar(menuBar);
@@ -344,6 +335,9 @@ public class ClienteFrame extends JFrame {
 			case USERS_ONLINE:
 			    refreshOnlines(message);
 			    break;
+			case SEND_FILE:
+			    sendFile(message);
+			    break;
 			default:
 			    break;
 		    }
@@ -381,9 +375,32 @@ public class ClienteFrame extends JFrame {
 	this.scrollSend.setEnabled(true);
 	this.txtAreaSend.setEnabled(true);
 	this.scrollReceive.setEnabled(true);
+	this.txtAreaReceive.setEnabled(true);
 	this.btnEnviar.setEnabled(true);
 	this.btnLimpar.setEnabled(true);
+	this.btnEscolherArquivo.setEnabled(true);
+	this.listOnlines.setEnabled(true);
+	this.listRepoOnline.setEnabled(true);
 	JOptionPane.showMessageDialog(this, "Você está conectado no chat!");
+    }
+
+    private void sendFile(ChatMessage message) {
+	Set<File> files = message.getSetFiles();
+	List<String> fileNames = new ArrayList<String>();
+	for (File f : files) {
+	    fileNames.add(f.getName());
+	}
+	this.listRepoOnline.setListData(fileNames.toArray());
+	this.listRepoOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+	this.listRepoOnline.addMouseListener(new MouseAdapter() {
+	    @Override
+	    public void mousePressed(final MouseEvent e) {
+	        final Object selectedValue = listRepoOnline.getSelectedValue();
+	        System.out.println("listRepoOnline.getSelectedValue =" + selectedValue);
+	        final DefaultListModel model = (DefaultListModel) listRepoOnline.getModel();
+	        model.add(listRepoOnline.getModel().getSize(), selectedValue);
+	    }
+	});
     }
 
     /**
@@ -394,11 +411,14 @@ public class ClienteFrame extends JFrame {
 	this.txtName.setEditable(true);
 	this.btnSair.setEnabled(false);
 	this.scrollSend.setEnabled(false);
-	this.txtAreaSend.setEnabled(false);
+	this.txtAreaSend.setEditable(false);
 	this.scrollReceive.setEnabled(false);
-	this.txtAreaReceive.setEnabled(false);
+	this.txtAreaReceive.setEditable(false);
 	this.btnEnviar.setEnabled(false);
 	this.btnLimpar.setEnabled(false);
+	this.btnEscolherArquivo.setEnabled(false);
+	this.listOnlines.setEnabled(false);
+	this.listRepoOnline.setEnabled(false);
 	this.txtAreaReceive.setText("");
 	this.txtAreaSend.setText("");
 	JOptionPane.showMessageDialog(this, "Você saiu do chat!");
@@ -420,7 +440,6 @@ public class ClienteFrame extends JFrame {
      * @param message
      *            the message
      */
-    @SuppressWarnings("unchecked")
     private void refreshOnlines(ChatMessage message) {
 	System.out.println(message.getSetOnlines().toString());
 	Set<String> names = message.getSetOnlines();

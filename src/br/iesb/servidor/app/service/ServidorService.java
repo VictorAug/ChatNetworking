@@ -1,6 +1,6 @@
 package br.iesb.servidor.app.service;
 
-import java.io.FileOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -19,6 +20,7 @@ import javax.swing.JOptionPane;
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
 
+@SuppressWarnings("unused")
 public class ServidorService implements Serializable {
 
     /** Constante serialVersionUID. */
@@ -44,7 +46,7 @@ public class ServidorService implements Serializable {
      * outros. </br></br> <code>String</code> Nome do usuário </br></br>
      * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
      */
-    private Map<String, FileOutputStream> mapFiles = new HashMap<String, FileOutputStream>();
+    private Map<String, List<File>> mapFiles = new HashMap<String, List<File>>();
 
     public ServidorService() {
 	try {
@@ -71,8 +73,6 @@ public class ServidorService implements Serializable {
 
 	/** Recebe a mensagem enviada pelo cliente. */
 	private ObjectInputStream input;
-	
-	private FileOutputStream fileOutput;
 
 	/**
 	 * Instancia um novo listener socket.
@@ -118,7 +118,6 @@ public class ServidorService implements Serializable {
 			    sendAll(message);
 			    break;
 			case SEND_FILE:
-			    mapFiles.put(message.getName(), fileOutput);
 			    sendFile(message);
 			    break;
 			default:
@@ -166,9 +165,12 @@ public class ServidorService implements Serializable {
 	}
     }
 
-    public void sendFile(ChatMessage message) {
-	// TODO Auto-generated method stub
-	
+    private void sendFile(ChatMessage message) {
+	for (Map.Entry<String, List<File>> kv : mapFiles.entrySet()) {
+	    if (kv.getKey().equals(message.getName())) {
+		kv.getValue().addAll(message.getSetFiles());
+	    }
+	}
     }
 
     private void disconnect(ChatMessage message, ObjectOutputStream output) {
@@ -177,15 +179,6 @@ public class ServidorService implements Serializable {
 	message.setAction(Action.SEND_ONE);
 	sendAll(message);
 	System.out.println("O usuário " + message.getName() + " saiu da sala");
-//	if (mapOnlines.isEmpty()) {
-//	    try {
-//		socket.close();
-//		serverSocket.close();
-//	    } catch (IOException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	    }
-//	}
     }
 
     private void sendOne(ChatMessage message) {
@@ -194,7 +187,7 @@ public class ServidorService implements Serializable {
 		try {
 		    kv.getValue().writeObject(message);
 		} catch (IOException ex) {
-		    Logger.getLogger(ServidorService.class.getName()).log(Level.SEVERE, null, ex);
+		    ex.printStackTrace();
 		}
 	    }
 	}
@@ -207,7 +200,7 @@ public class ServidorService implements Serializable {
 		try {
 		    kv.getValue().writeObject(message);
 		} catch (IOException ex) {
-		    Logger.getLogger(ServidorService.class.getName()).log(Level.SEVERE, null, ex);
+		    ex.printStackTrace();
 		}
 	    }
 	}
@@ -217,12 +210,12 @@ public class ServidorService implements Serializable {
 	try {
 	    output.writeObject(message);
 	} catch (IOException ex) {
-	    Logger.getLogger(ServidorService.class.getName()).log(Level.SEVERE, null, ex);
+	    ex.printStackTrace();
 	}
     }
 
     /**
-     * Envia mensagens apenas aos usuário onlines selecionados.
+     * Envia mensagens apenas aos usuários onlines selecionados.
      */
     private void sendOnlines() {
 	Set<String> setNames = new HashSet<String>();
@@ -233,13 +226,14 @@ public class ServidorService implements Serializable {
 	ChatMessage message = new ChatMessage();
 	message.setAction(Action.USERS_ONLINE);
 	message.setSetOnlines(setNames);
+	
 
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    message.setName(kv.getKey());
 	    try {
 		kv.getValue().writeObject(message);
 	    } catch (IOException ex) {
-		Logger.getLogger(ServidorService.class.getName()).log(Level.SEVERE, null, ex);
+		ex.printStackTrace();
 	    }
 	}
     }
