@@ -51,7 +51,7 @@ public class AbrirAction extends AbstractAction {
      * @param arquivo
      *            the arquivo
      */
-    private void openFile(File arquivo) {
+    public static void openFile(File arquivo) {
 	try {
 	    arquivo.setReadOnly();
 	    Desktop.getDesktop().open(arquivo);

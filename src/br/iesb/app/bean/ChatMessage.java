@@ -2,6 +2,7 @@ package br.iesb.app.bean;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -88,6 +89,10 @@ public class ChatMessage implements Serializable {
 
     public Set<File> getSetFiles() {
 	return setFiles;
+    }
+    
+    public void setFiles(Collection<? extends File> collection) {
+	this.setFiles.addAll(collection);
     }
     
     public void addFiles(File[] files) {

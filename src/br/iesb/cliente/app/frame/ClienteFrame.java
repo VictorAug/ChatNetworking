@@ -2,6 +2,7 @@ package br.iesb.cliente.app.frame;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -38,8 +39,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.DefaultCaret;
 
@@ -60,12 +59,12 @@ import java.awt.Font;
 @SuppressWarnings({ "unused", "rawtypes", "unchecked" })
 public class ClienteFrame extends JFrame {
 
-    /** Constante serialVersionUID. */
+    /** Constante de serialização do objeto. */
     private static final long serialVersionUID = -7997090265601989938L;
 
     private Socket socket;
     private ChatMessage message;
-    private ClienteService service;
+    private ClienteService clientService;
     private JTextField txtName;
     private BufferedReader reader;
     private PrintWriter printWriter;
@@ -128,7 +127,7 @@ public class ClienteFrame extends JFrame {
 	    ChatMessage message = new ChatMessage();
 	    message.setName(this.message.getName());
 	    message.setAction(Action.DISCONNECT);
-	    this.service.send(message);
+	    this.clientService.send(message);
 	    disconnected();
 	});
 
@@ -139,10 +138,10 @@ public class ClienteFrame extends JFrame {
 		this.message = new ChatMessage();
 		this.message.setAction(Action.CONNECT);
 		this.message.setName(name);
-		this.service = new ClienteService();
-		this.socket = this.service.connect();
+		this.clientService = new ClienteService();
+		this.socket = this.clientService.connect();
 		new Thread(new ListenerSocket(this.socket)).start();
-		this.service.send(message);
+		this.clientService.send(message);
 	    }
 	});
 	getContentPane().add(btnConectar, "cell 10 1,grow");
@@ -176,6 +175,15 @@ public class ClienteFrame extends JFrame {
 	listRepoOnline.setModel(new DefaultListModel<String>());
 	listRepoOnline.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Reposit\u00F3rio Online", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
 	listRepoOnline.setBackground(Color.BLACK);
+	listRepoOnline.addListSelectionListener(e -> {
+	    if (e.getSource() == listRepoOnline) {
+		for (File file : message.getSetFiles()) {
+		    if (file.getName().equals(listRepoOnline.getSelectedValue())) {
+			AbrirAction.openFile(file);
+		    }
+		}
+	    }
+	});
 	getContentPane().add(listRepoOnline, "cell 0 3 3 11,grow");
 
 	scrollSend = new JScrollPane();
@@ -204,12 +212,13 @@ public class ClienteFrame extends JFrame {
 		return;
 	    }
 	    System.out.println("File name: " + fileChooser.getSelectedFile().getName());
+
 	    String name = this.message.getName();
 	    this.message = new ChatMessage();
 	    this.message.setName(name);
 	    this.message.setAction(Action.SEND_FILE);
 	    this.message.addFiles(fileChooser.getSelectedFiles());
-	    this.service.send(this.message);
+	    this.clientService.send(this.message);
 	    Set<File> setFiles = this.message.getSetFiles();
 	    String[] fileNames = new String[setFiles.size()];
 	    int i = 0;
@@ -239,7 +248,7 @@ public class ClienteFrame extends JFrame {
 		this.message.setName(name);
 		this.message.setText(text);
 		this.txtAreaReceive.append("Você disse: " + text + "\n");
-		this.service.send(this.message);
+		this.clientService.send(this.message);
 	    }
 
 	    this.txtAreaSend.setText("");
@@ -282,13 +291,13 @@ public class ClienteFrame extends JFrame {
 	menuBar.add(mnAjuda);
 
 	mntmInformaesDaRede = new JMenuItem("Informações da rede");
-	mntmInformaesDaRede.addActionListener(e -> JOptionPane.showMessageDialog(null, "IP do Servidor: " + this.service.getServerIP() + "\nIP do cliente: " + this.service.getClientIP(),
+	mntmInformaesDaRede.addActionListener(e -> JOptionPane.showMessageDialog(null, "IP do Servidor: " + this.clientService.getServerIP() + "\nIP do cliente: " + this.clientService.getClientIP(),
 		"Informações da rede", JOptionPane.DEFAULT_OPTION));
 	mnAjuda.add(mntmInformaesDaRede);
     }
 
     /**
-     * Class ListenerSocket.
+     * Classe ListenerSocket.
      */
     private class ListenerSocket implements Runnable {
 
@@ -322,7 +331,7 @@ public class ClienteFrame extends JFrame {
 		while ((message = (ChatMessage) input.readObject()) != null) {
 		    switch (message.getAction()) {
 			case CONNECT:
-			    connected(message);
+			    connect(message);
 			    break;
 			case DISCONNECT:
 			    disconnected();
@@ -362,7 +371,7 @@ public class ClienteFrame extends JFrame {
      * @param message
      *            the message
      */
-    private void connected(ChatMessage message) {
+    private void connect(ChatMessage message) {
 	if (message.getText().equals("NO")) {
 	    this.txtName.setText("");
 	    JOptionPane.showMessageDialog(this, "Conexão não realizada!\nTente novamente com um novo nome.");
@@ -392,15 +401,7 @@ public class ClienteFrame extends JFrame {
 	}
 	this.listRepoOnline.setListData(fileNames.toArray());
 	this.listRepoOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-	this.listRepoOnline.addMouseListener(new MouseAdapter() {
-	    @Override
-	    public void mousePressed(final MouseEvent e) {
-	        final Object selectedValue = listRepoOnline.getSelectedValue();
-	        System.out.println("listRepoOnline.getSelectedValue =" + selectedValue);
-	        final DefaultListModel model = (DefaultListModel) listRepoOnline.getModel();
-	        model.add(listRepoOnline.getModel().getSize(), selectedValue);
-	    }
-	});
+
     }
 
     /**
@@ -449,5 +450,4 @@ public class ClienteFrame extends JFrame {
 	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	this.listOnlines.setLayoutOrientation(JList.VERTICAL);
     }
-
 }

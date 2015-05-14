@@ -226,7 +226,6 @@ public class ServidorService implements Serializable {
 	ChatMessage message = new ChatMessage();
 	message.setAction(Action.USERS_ONLINE);
 	message.setSetOnlines(setNames);
-	
 
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    message.setName(kv.getKey());
