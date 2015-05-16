@@ -1,6 +1,7 @@
 package br.iesb.cliente.app.frame;
 
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -136,6 +137,11 @@ public class ClienteFrame extends JFrame {
 	    String name = this.txtName.getText();
 	    if (!name.isEmpty()) {
 		this.message = new ChatMessage();
+		List<String> fileNames = new ArrayList<String>();
+		for (File f : message.getSetFiles()) {
+		    fileNames.add(f.getName());
+		}
+		this.listRepoOnline.setListData(fileNames.toArray());
 		this.message.setAction(Action.CONNECT);
 		this.message.setName(name);
 		this.clientService = new ClienteService();
@@ -393,6 +399,7 @@ public class ClienteFrame extends JFrame {
 	JOptionPane.showMessageDialog(this, "Você está conectado no chat!");
     }
 
+    // TODO Método inútil.
     private void sendFile(ChatMessage message) {
 	Set<File> files = message.getSetFiles();
 	List<String> fileNames = new ArrayList<String>();
