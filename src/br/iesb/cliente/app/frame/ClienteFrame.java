@@ -169,6 +169,7 @@ public class ClienteFrame extends JFrame {
 	getContentPane().add(scrollReceive, "cell 3 3 10 4,grow");
 
 	txtAreaReceive = new JTextArea();
+	txtAreaReceive.setEditable(false);
 	txtAreaReceive.setCaretColor(Color.CYAN);
 	txtAreaReceive.setFont(new Font("Monospaced", Font.ITALIC, 13));
 	txtAreaReceive.setForeground(Color.CYAN);
