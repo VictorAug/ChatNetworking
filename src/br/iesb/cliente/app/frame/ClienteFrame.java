@@ -351,9 +351,6 @@ public class ClienteFrame extends JFrame {
 			case USERS_ONLINE:
 			    refreshOnlines(message);
 			    break;
-			case SEND_FILE:
-			    sendFile(message);
-			    break;
 			default:
 			    break;
 		    }
@@ -398,18 +395,6 @@ public class ClienteFrame extends JFrame {
 	this.listOnlines.setEnabled(true);
 	this.listRepoOnline.setEnabled(true);
 	JOptionPane.showMessageDialog(this, "Você está conectado no chat!");
-    }
-
-    // TODO Método inútil.
-    private void sendFile(ChatMessage message) {
-	Set<File> files = message.getSetFiles();
-	List<String> fileNames = new ArrayList<String>();
-	for (File f : files) {
-	    fileNames.add(f.getName());
-	}
-	this.listRepoOnline.setListData(fileNames.toArray());
-	this.listRepoOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
     }
 
     /**
@@ -457,5 +442,12 @@ public class ClienteFrame extends JFrame {
 	this.listOnlines.setListData(array);
 	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	this.listOnlines.setLayoutOrientation(JList.VERTICAL);
+	Set<File> files = message.getSetFiles();
+	List<String> fileNames = new ArrayList<String>();
+	for (File f : files) {
+	    fileNames.add(f.getName());
+	}
+	this.listRepoOnline.setListData(fileNames.toArray());
+	this.listRepoOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     }
 }
