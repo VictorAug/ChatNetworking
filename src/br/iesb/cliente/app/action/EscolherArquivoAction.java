@@ -1,40 +1,34 @@
 package br.iesb.cliente.app.action;
 
-import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.JFileChooser;
-import javax.swing.JTextArea;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.JList;
 
-public class EscolherArquivoAction extends AbstractAction {
+import br.iesb.app.bean.ChatMessage;
 
-    /** Constante serialVersionUID. */
-    private static final long serialVersionUID = -6481964008718249478L;
-    private JTextArea textArea;
+@SuppressWarnings("rawtypes")
+public class EscolherArquivoAction extends MouseAdapter {
 
-    public EscolherArquivoAction() {
-	super("Escolher Arquivo");
-	this.putValue(Action.SHORT_DESCRIPTION, "Upload do arquivo");
+    private JList listRepoOnline;
+    private final ChatMessage message;
+
+    public EscolherArquivoAction(JList listRepoOnline, ChatMessage message) {
+	this.message = message;
+	this.listRepoOnline = listRepoOnline;
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-	JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.dir")));
-	fileChooser.setMultiSelectionEnabled(true);
-	fileChooser.setAcceptAllFileFilterUsed(false);
-	fileChooser.setFileFilter(new FileNameExtensionFilter("image files (*jpg)", "jpg"));
-	int res = fileChooser.showOpenDialog(textArea);
-	if (res != JFileChooser.APPROVE_OPTION) {
-	    return;
+    public void mouseClicked(MouseEvent e) {
+	if (e.getClickCount() == 2 && e.getSource() == listRepoOnline) {
+	    if (((JList) e.getSource()).locationToIndex(e.getPoint()) >= 0) {
+		for (File file : message.getFiles()) {
+		    if (file.getName().equals(listRepoOnline.getSelectedValue())) {
+			AbrirAction.openFile(file);
+		    }
+		}
+	    }
 	}
-	uploadFile(fileChooser.getSelectedFile());
     }
-
-    private void uploadFile(File selectedFile) {
-	
-    }
-
 }

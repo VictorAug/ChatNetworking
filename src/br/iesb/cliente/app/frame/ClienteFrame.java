@@ -4,8 +4,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -15,11 +13,9 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.swing.DefaultListModel;
@@ -46,10 +42,10 @@ import net.miginfocom.swing.MigLayout;
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
 import br.iesb.cliente.app.action.AbrirAction;
+import br.iesb.cliente.app.action.EscolherArquivoAction;
 import br.iesb.cliente.app.action.SalvarAction;
 import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
-import br.iesb.servidor.app.service.ServidorService;
 
 /**
  * Class ClienteFrame.
@@ -137,7 +133,7 @@ public class ClienteFrame extends JFrame {
 	    if (!name.isEmpty()) {
 		Set<File> setFiles = new HashSet<File>();
 		if (this.message != null) {
-		    setFiles = this.message.getSetFiles();
+		    setFiles = this.message.getFiles();
 		}
 		this.message = new ChatMessage();
 		List<String> fileNames = new ArrayList<String>();
@@ -157,9 +153,9 @@ public class ClienteFrame extends JFrame {
 	getContentPane().add(btnConectar, "cell 10 1,grow");
 	getContentPane().add(btnSair, "cell 11 1,grow");
 
-	listModel = new DefaultListModel();
+	listModel = new DefaultListModel<String>();
 
-	listOnlines = new JList(listModel);
+	listOnlines = new JList();
 	listOnlines.setSelectionMode(DefaultListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 	listOnlines.setModel(new DefaultListModel<String>());
 	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
@@ -188,22 +184,6 @@ public class ClienteFrame extends JFrame {
 	listRepoOnline.setModel(new DefaultListModel<String>());
 	listRepoOnline.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Reposit\u00F3rio Online", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
 	listRepoOnline.setBackground(Color.BLACK);
-	listRepoOnline.addMouseListener(new MouseAdapter() {
-	    @Override
-	    public void mouseClicked(MouseEvent e) {
-		if (e.getClickCount() == 2 && e.getSource() == listRepoOnline) {
-		    if (((JList) e.getSource()).locationToIndex(e.getPoint()) >= 0) {
-			for (Set<File> setArquivo : DataBase.getMapFiles().values()) {
-			    for (File arquivo : setArquivo) {
-				if (arquivo.getName().equals(listRepoOnline.getSelectedValue())) {
-				    AbrirAction.openFile(arquivo);
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	});
 	getContentPane().add(listRepoOnline, "cell 0 3 3 11,grow");
 
 	scrollSend = new JScrollPane();
@@ -231,61 +211,74 @@ public class ClienteFrame extends JFrame {
 	    if (res != JFileChooser.APPROVE_OPTION) {
 		return;
 	    }
+	    File[] files = fileChooser.getSelectedFiles();
+	    String name = message.getName();
 
-	    String name = this.message.getName();
-
-	    this.message = new ChatMessage();
-
-	    if (this.listOnlines.getSelectedIndex() > -1) {
-		this.message.setNameReserved((String) this.listOnlines.getSelectedValue());
-		this.message.setAction(Action.SEND_ONE);
-		this.listOnlines.clearSelection();
+	    message = new ChatMessage();
+	    if (listOnlines.getSelectedIndex() > -1) {
+		message.setNameReserved((String) listOnlines.getSelectedValue());
+		message.setAction(Action.SEND_ONE);
+		listOnlines.clearSelection();
 	    } else {
-		this.message.setAction(Action.SEND_ALL);
+		message.setAction(Action.SEND_ALL);
 	    }
+	    message.setName(name);
+	    message.addFiles(files);
+	    txtAreaReceive.append("Você enviou o(s) arquivo(s): ");
+	    String[] fileNamesOf = fileNamesOf(message.getFiles());
+	    for (int i = 0; i < fileNamesOf.length; i++) {
+		txtAreaReceive.append(fileNamesOf[i] + ", ");
+	    }
+	    txtAreaReceive.append("\n");
+	    clientService.send(message);
+	    System.out.println("========================================================");
+	    System.out.println("================= btnEscolherArquivo ===================");
+	    System.out.println("========================================================");
 
-	    this.message.setName(name);
-	    this.message.addFiles(fileChooser.getSelectedFiles());
-	    this.txtAreaReceive.append("Você enviou o arquivo: " + fileChooser.getSelectedFile().getName() + "\n");
-	    this.clientService.send(this.message);
-
-	    DataBase.addFilesFromMessage(this.message);
-	    Map<String, Set<File>> mapFiles = DataBase.getMapFiles();
-
-	    Set<String> fileNames = new LinkedHashSet<String>();
-	    int i = 0;
-	    for (Map.Entry<String, Set<File>> kvFile : mapFiles.entrySet()) {
-		for (File file : kvFile.getValue()) {
-		    fileNames.add(file.getName());
+	    if (listRepoOnline.getModel().getSize() > 0) {
+		String[] list = new String[listRepoOnline.getModel().getSize() + message.getFiles().size()];
+		for (int i = 0; i < listRepoOnline.getModel().getSize(); i++) {
+		    System.out.println("listRepoOnline.getModel().getElementAt(" + i + ") = " + listRepoOnline.getModel().getElementAt(i));
+		    list[i] = (String) listRepoOnline.getModel().getElementAt(i);
 		}
+		int i = listRepoOnline.getModel().getSize();
+		for (File messageFile : message.getFiles()) {
+		    list[i++] = messageFile.getName();
+		}
+		listRepoOnline.setListData(list);
+	    } else {
+		listRepoOnline.setListData(fileNamesOf);
 	    }
-	    listRepoOnline.setListData(fileNames.toArray());
+	    System.out.println();
+	    if (listRepoOnline.getModel().getSize() == 0) {
+		System.out.println("message.getFiles() = " + message.getFiles());
+		listRepoOnline.addMouseListener(new EscolherArquivoAction(listRepoOnline, message));
+	    }
 	});
 
 	btnEnviar = new JButton("Enviar");
 	btnEnviar.setEnabled(false);
 	btnEnviar.addActionListener(e -> {
-	    String text = this.txtAreaSend.getText();
-	    String name = this.message.getName();
+	    String text = txtAreaSend.getText();
+	    String name = message.getName();
 
-	    this.message = new ChatMessage();
-
-	    if (this.listOnlines.getSelectedIndex() > -1) {
-		this.message.setNameReserved((String) this.listOnlines.getSelectedValue());
-		this.message.setAction(Action.SEND_ONE);
-		this.listOnlines.clearSelection();
+	    message = new ChatMessage();
+	    if (listOnlines.getSelectedIndex() > -1) {
+		message.setNameReserved((String) listOnlines.getSelectedValue());
+		message.setAction(Action.SEND_ONE);
+		listOnlines.clearSelection();
 	    } else {
-		this.message.setAction(Action.SEND_ALL);
+		message.setAction(Action.SEND_ALL);
 	    }
 
 	    if (!text.isEmpty()) {
-		this.message.setName(name);
-		this.message.setText(text);
-		this.txtAreaReceive.append("Você disse: " + text + "\n");
-		this.clientService.send(this.message);
+		message.setName(name);
+		message.setText(text);
+		txtAreaReceive.append("Você disse: " + text + "\n");
+		clientService.send(message);
 	    }
 
-	    this.txtAreaSend.setText("");
+	    txtAreaSend.setText("");
 	    mntmSalvarComo.addActionListener(new SalvarComoAction(this, txtAreaReceive));
 	    mntmSalvar.addActionListener(new SalvarAction(this, message, txtAreaReceive));
 	});
@@ -330,6 +323,15 @@ public class ClienteFrame extends JFrame {
 	mnAjuda.add(mntmInformaesDaRede);
     }
 
+    private String[] fileNamesOf(LinkedHashSet<File> fileSet) {
+	String[] fileNames = new String[fileSet.size()];
+	int i = 0;
+	for (File file : fileSet) {
+	    fileNames[i++] = file.getName();
+	}
+	return fileNames;
+    }
+
     /**
      * Classe ListenerSocket.
      */
@@ -372,7 +374,6 @@ public class ClienteFrame extends JFrame {
 			    socket.close();
 			    break;
 			case SEND_ONE:
-			    System.out.println("::: " + DataBase.getMapFiles() + " :::");
 			    receiveClient(message);
 			    break;
 			case USERS_ONLINE:
@@ -385,7 +386,7 @@ public class ClienteFrame extends JFrame {
 	    } catch (ClassNotFoundException e) {
 		e.printStackTrace();
 	    } catch (IOException e) {
-		if (message.getSetOnlines().isEmpty()) {
+		if (message.getOnlines().isEmpty()) {
 		    JOptionPane.showMessageDialog(null, "Servidor encerrado");
 		    System.exit(0);
 		} else {
@@ -452,20 +453,38 @@ public class ClienteFrame extends JFrame {
      *            the message
      */
     private void receiveClient(ChatMessage message) {
-	Set<String> fileNames = new LinkedHashSet<String>();
-	for (Set<File> setArquivos : DataBase.getMapFiles().values()) {
-	    for (File arquivo : setArquivos) {
-		fileNames.add(arquivo.getName());
-	    }
-	}
-	this.listRepoOnline.setListData(fileNames.toArray());
-	this.listRepoOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	if (message.getText() != null && !message.getName().equals(this.message.getName())) {
 	    this.txtAreaReceive.append(message.getName() + " diz:  " + message.getText() + "\n");
 	}
-	if (!DataBase.getMapFiles().values().isEmpty() && !message.getName().equals(this.message.getName())) {
-	    this.txtAreaReceive.append(message.getName() + " enviou o arquivo: " + ((File) message.getSetFiles().toArray()[message.getSetFiles().toArray().length - 1]).getName() + "\n");
+	if (message.getFiles().size() > this.message.getFiles().size()) {
+	    this.txtAreaReceive.append(message.getName() + " enviou o(s) arquivo(s): ");
+	    String[] fileNamesOf = fileNamesOf(message.getFiles());
+	    for (int i = 0; i < fileNamesOf.length; i++) {
+		this.txtAreaReceive.append(fileNamesOf[i] + ", ");
+	    }
+	    this.txtAreaReceive.append("\n");
+	    if (listRepoOnline.getModel().getSize() > 0) {
+		String[] list = new String[listRepoOnline.getModel().getSize() + message.getFiles().size()];
+		for (int i = 0; i < listRepoOnline.getModel().getSize(); i++) {
+		    System.out.println("listRepoOnline.getModel().getElementAt(" + i + ") = " + listRepoOnline.getModel().getElementAt(i));
+		    list[i] = (String) listRepoOnline.getModel().getElementAt(i);
+		}
+		int i = listRepoOnline.getModel().getSize();
+		for (File messageFile : message.getFiles()) {
+		    list[i++] = messageFile.getName();
+		}
+		listRepoOnline.setListData(list);
+	    }
 	}
+	if (!message.getFiles().isEmpty() && !message.getName().equals(this.message.getName())) {
+	    listRepoOnline.setListData(fileNamesOf(message.getFiles()));
+	    listRepoOnline.addMouseListener(new EscolherArquivoAction(listRepoOnline, message));
+	}
+	System.out.println("============================================");
+	System.out.println("=============== receiveClient ==============");
+	System.out.println("============================================");
+	System.out.println("message = {" + message.getName() + "=" + message.getFiles() + "}");
+	System.out.println("this.message = {" + this.message.getName() + "=" + this.message.getFiles() + "}" + "\n");
     }
 
     /**
@@ -475,8 +494,8 @@ public class ClienteFrame extends JFrame {
      *            the message
      */
     private void refreshOnlinesClient(ChatMessage message) {
-	System.out.println(message.getSetOnlines().toString());
-	Set<String> names = message.getSetOnlines();
+	System.out.println(message.getOnlines().toString());
+	Set<String> names = message.getOnlines();
 	names.remove(message.getName());
 	String[] array = (String[]) names.toArray(new String[names.size()]);
 	this.listOnlines.setListData(array);

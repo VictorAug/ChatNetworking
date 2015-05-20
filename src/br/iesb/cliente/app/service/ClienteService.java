@@ -18,6 +18,11 @@ public class ClienteService implements Serializable {
 
     /** Objeto com o conteúdo da mensagem a ser enviada ao servidor. */
     private ObjectOutputStream output;
+    
+//    public ClienteService() {
+//	connect();
+//	new Thread().start();
+//    }
 
     public Socket connect() {
 	try {
@@ -29,11 +34,6 @@ public class ClienteService implements Serializable {
 	    e.printStackTrace();
 	}
 	return socket;
-    }
-
-    public void setHostServer(String host) {
-	// TODO Altera o servidor
-
     }
 
     public void send(ChatMessage message) {

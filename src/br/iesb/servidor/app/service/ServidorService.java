@@ -47,10 +47,10 @@ public class ServidorService implements Serializable {
      * outros. </br></br> <code>String</code> Nome do usuário </br></br>
      * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
      */
-    private static Map<String, Set<File>> mapFiles = new HashMap<String, Set<File>>();
-    
+    private static Map<String, ObjectOutputStream> streamMap = new HashMap<String, ObjectOutputStream>();
+
     private static ServidorService uniqueInstance;
-    
+
     public static synchronized ServidorService getInstance() {
 	if (uniqueInstance == null) {
 	    uniqueInstance = new ServidorService();
@@ -105,33 +105,32 @@ public class ServidorService implements Serializable {
 	public void run() {
 	    ChatMessage message = null;
 	    try {
-		while ((message = (ChatMessage) input.readObject()) != null) {
-		    switch (message.getAction()) {
-			case CONNECT:
-			    if (connectServer(message, output)) {
-				mapOnlines.put(message.getName(), output);
-				mapFiles.put(message.getName(), new HashSet<File>());
-				sendOnlinesServer();
-			    } else
-				message = null;
-			    break;
-			case DISCONNECT:
-			    if (message != null) {
-				disconnectServer(message, output);
-				if (!(mapOnlines.isEmpty()))
+		    while ((message = (ChatMessage) input.readObject()) != null) {
+			switch (message.getAction()) {
+			    case CONNECT:
+				if (connectServer(message, output)) {
+				    mapOnlines.put(message.getName(), output);
 				    sendOnlinesServer();
-			    }
-			    return;
-			case SEND_ONE:
-			    sendOneServer(message, output);
-			    break;
-			case SEND_ALL:
-			    sendAllServer(message, output);
-			    break;
-			default:
-			    break;
+				} else
+				    message = null;
+				break;
+			    case DISCONNECT:
+				if (message != null) {
+				    disconnectServer(message, output);
+				    if (!(mapOnlines.isEmpty()))
+					sendOnlinesServer();
+				}
+				return;
+			    case SEND_ONE:
+				sendOneServer(message, output);
+				break;
+			    case SEND_ALL:
+				sendAllServer(message, output);
+				break;
+			    default:
+				break;
+			}
 		    }
-		}
 	    } catch (IOException e) {
 		ChatMessage cm = new ChatMessage();
 		if (message != null) {
@@ -181,16 +180,6 @@ public class ServidorService implements Serializable {
     }
 
     private void sendOneServer(ChatMessage message, ObjectOutputStream output) {
-	if (mapFiles.isEmpty()) {
-	    mapFiles.put(message.getName(), message.getSetFiles());
-	} else {
-	    for (Map.Entry<String, Set<File>> kv : mapFiles.entrySet()) {
-		if (kv.getKey().equals(message.getName())) {
-		    kv.getValue().addAll(message.getSetFiles());
-		}
-	    }
-	}
-	message.addFiles((File[]) mapFiles.values().toArray());
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    if (kv.getKey().equals(message.getNameReserved())) {
 		try {
@@ -204,15 +193,6 @@ public class ServidorService implements Serializable {
     }
 
     private void sendAllServer(ChatMessage message, ObjectOutputStream output) {
-	if (mapFiles.isEmpty()) {
-	    mapFiles.put(message.getName(), message.getSetFiles());
-	} else {
-	    for (Map.Entry<String, Set<File>> kv : mapFiles.entrySet()) {
-		if (kv.getKey().equals(message.getName())) {
-		    kv.getValue().addAll(message.getSetFiles());
-		}
-	    }
-	}
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    if (!kv.getKey().equals(message.getName())) {
 		message.setAction(Action.SEND_ONE);
@@ -245,28 +225,15 @@ public class ServidorService implements Serializable {
 
 	ChatMessage message = new ChatMessage();
 	message.setAction(Action.USERS_ONLINE);
-	message.setSetOnlines(setNames);
+	message.setOnlines(setNames);
 
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    message.setName(kv.getKey());
-	    message.setFiles(mapFiles.get(kv.getKey()));
 	    try {
 		kv.getValue().writeObject(message);
 	    } catch (IOException ex) {
 		ex.printStackTrace();
 	    }
-	}
-    }
-
-    public static Map<String, Set<File>> getMapFiles() {
-        return mapFiles;
-    }
-
-    public static void addFilesFromMessage(ChatMessage message) {
-	if (mapFiles.containsKey(message.getName())) {
-	    mapFiles.get(message.getName()).addAll(message.getSetFiles());
-	} else {
-	    mapFiles.put(message.getName(), message.getSetFiles());
 	}
     }
 

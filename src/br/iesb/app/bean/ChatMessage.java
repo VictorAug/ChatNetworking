@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -30,9 +31,9 @@ public class ChatMessage implements Serializable {
     private String nameReserved;
 
     /** Lista de todos os cliente online. */
-    private Set<String> setOnlines = new HashSet<String>();
+    private Set<String> onlines = new HashSet<String>();
 
-    private Set<File> setFiles = new HashSet<File>();
+    private LinkedHashSet<File> files = new LinkedHashSet<File>();
 
     /**
      * Para cada mensagem que o cliente envia p/ o servidor, ele vai dizer qual
@@ -71,12 +72,12 @@ public class ChatMessage implements Serializable {
 	this.nameReserved = nameReserved;
     }
 
-    public Set<String> getSetOnlines() {
-	return setOnlines;
+    public Set<String> getOnlines() {
+	return onlines;
     }
 
-    public void setSetOnlines(Set<String> setOnline) {
-	this.setOnlines = setOnline;
+    public void setOnlines(Set<String> online) {
+	this.onlines = online;
     }
 
     public Action getAction() {
@@ -87,17 +88,17 @@ public class ChatMessage implements Serializable {
 	this.action = action;
     }
 
-    public Set<File> getSetFiles() {
-	return setFiles;
+    public LinkedHashSet<File> getFiles() {
+	return files;
     }
     
     public void setFiles(Collection<? extends File> collection) {
-	this.setFiles.addAll(collection);
+	this.files.addAll(collection);
     }
     
     public void addFiles(File[] files) {
 	for (int i = 0; i < files.length; i++) {
-	    this.setFiles.add(files[i]);
+	    this.files.add(files[i]);
 	}
     }
 
