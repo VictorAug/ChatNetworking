@@ -12,9 +12,17 @@ import br.iesb.app.bean.ChatMessage;
 public class EscolherArquivoAction extends MouseAdapter {
 
     private JList listRepoOnline;
-    private final ChatMessage message;
-
-    public EscolherArquivoAction(JList listRepoOnline, ChatMessage message) {
+    private ChatMessage message;
+    private static EscolherArquivoAction uniqueInstance;
+    
+    public static synchronized EscolherArquivoAction getInstance(JList listRepoOnline, ChatMessage message) {
+	if (uniqueInstance == null) {
+	    uniqueInstance = new EscolherArquivoAction(listRepoOnline, message);
+	}
+	return uniqueInstance;
+    }
+    
+    private EscolherArquivoAction(JList listRepoOnline, ChatMessage message) {
 	this.message = message;
 	this.listRepoOnline = listRepoOnline;
     }
@@ -31,4 +39,13 @@ public class EscolherArquivoAction extends MouseAdapter {
 	    }
 	}
     }
+
+    public void setMessage(ChatMessage message) {
+	this.message = message;
+    }
+    
+    public ChatMessage getMessage() {
+	return message;
+    }
+    
 }

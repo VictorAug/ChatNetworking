@@ -92,7 +92,7 @@ public class ChatMessage implements Serializable {
 	return files;
     }
     
-    public void setFiles(Collection<? extends File> collection) {
+    public void addAllFiles(Collection<? extends File> collection) {
 	this.files.addAll(collection);
     }
     
