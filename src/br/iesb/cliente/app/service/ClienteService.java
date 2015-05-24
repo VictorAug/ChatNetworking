@@ -18,11 +18,6 @@ public class ClienteService implements Serializable {
 
     /** Objeto com o conteúdo da mensagem a ser enviada ao servidor. */
     private ObjectOutputStream output;
-    
-//    public ClienteService() {
-//	connect();
-//	new Thread().start();
-//    }
 
     public Socket connect() {
 	try {

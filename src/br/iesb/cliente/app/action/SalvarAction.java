@@ -24,7 +24,7 @@ public class SalvarAction extends AbstractAction {
     /** Atributo text area. */
     private ChatMessage message;
 
-    private static final String DB_PATH = "database";
+    private static final String DB_TXT_PATH = "database/text/";
 
     private JTextArea txtAreaReceive;
 
@@ -50,9 +50,9 @@ public class SalvarAction extends AbstractAction {
      */
     @Override
     public void actionPerformed(ActionEvent e) {
-	File file = new File(DB_PATH);
+	File file = new File(DB_TXT_PATH);
 	file.setReadOnly();
-	if (!Files.exists(Paths.get(DB_PATH)))
+	if (!Files.exists(Paths.get(DB_TXT_PATH)))
 	    file.mkdir();
 	try {
 	    escreveArquivo();
@@ -68,7 +68,7 @@ public class SalvarAction extends AbstractAction {
      *             Sinaliza que uma I/O exception ocorreu.
      */
     public void escreveArquivo() throws IOException {
-	PrintWriter out = new PrintWriter(new FileWriter(DB_PATH + "/" + message.getName()));
+	PrintWriter out = new PrintWriter(new FileWriter(DB_TXT_PATH + "/" + message.getName()));
 	out.print(txtAreaReceive.getText());
 	out.close();
 	JOptionPane.showMessageDialog(null, "Arquivo salvo com sucesso!");

@@ -105,32 +105,35 @@ public class ServidorService implements Serializable {
 	public void run() {
 	    ChatMessage message = null;
 	    try {
-		    while ((message = (ChatMessage) input.readObject()) != null) {
-			switch (message.getAction()) {
-			    case CONNECT:
-				if (connectServer(message, output)) {
-				    mapOnlines.put(message.getName(), output);
+		while ((message = (ChatMessage) input.readObject()) != null) {
+		    switch (message.getAction()) {
+			case CONNECT:
+			    if (connectServer(message, output)) {
+				mapOnlines.put(message.getName(), output);
+				sendOnlinesServer();
+			    } else
+				message = null;
+			    break;
+			case DISCONNECT:
+			    if (message != null) {
+				disconnectServer(message, output);
+				if (!(mapOnlines.isEmpty()))
 				    sendOnlinesServer();
-				} else
-				    message = null;
-				break;
-			    case DISCONNECT:
-				if (message != null) {
-				    disconnectServer(message, output);
-				    if (!(mapOnlines.isEmpty()))
-					sendOnlinesServer();
-				}
-				return;
-			    case SEND_ONE:
-				sendOneServer(message, output);
-				break;
-			    case SEND_ALL:
-				sendAllServer(message, output);
-				break;
-			    default:
-				break;
-			}
+			    }
+			    return;
+			case SEND_ONE:
+			    sendOneServer(message, output);
+			    break;
+			case SEND_ALL:
+			    sendAllServer(message, output);
+			    break;
+			case SEND_FILE:
+			    sendFile(message, output);
+			    break;
+			default:
+			    break;
 		    }
+		}
 	    } catch (IOException e) {
 		ChatMessage cm = new ChatMessage();
 		if (message != null) {
@@ -140,7 +143,26 @@ public class ServidorService implements Serializable {
 		    System.out.println(message.getName() + " deixou o chat!");
 		}
 	    } catch (ClassNotFoundException e) {
-		e.printStackTrace();
+		streamMap.remove(message.getName());
+		System.out.println(message.getName() + " desconectou!");
+	    }
+	}
+
+    }
+
+    private void sendFile(ChatMessage message, ObjectOutputStream output) throws IOException {
+	streamMap.put(message.getName(), output);
+	if (message.getFile() != null) {
+	    for (Map.Entry<String, ObjectOutputStream> keyValue : streamMap.entrySet()) {
+//		message.setAction(Action.RECEIVE_FILE);
+		message.setAction(Action.SAVE_FILE);
+		if (!message.getName().equals(keyValue.getKey())) {
+		    if (!message.getNameReserved().isEmpty()) {
+			sendOneServer(message, output);
+		    } else {
+			sendAllServer(message, output);
+		    }
+		}
 	    }
 	}
     }
