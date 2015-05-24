@@ -13,14 +13,14 @@ public class EscolherArquivoAction extends MouseAdapter {
     private JList listRepoOnline;
     private ChatMessage message;
     private static EscolherArquivoAction uniqueInstance;
-
+    
     public static synchronized EscolherArquivoAction getInstance(JList listRepoOnline, ChatMessage message) {
 	if (uniqueInstance == null) {
 	    uniqueInstance = new EscolherArquivoAction(listRepoOnline, message);
 	}
 	return uniqueInstance;
     }
-
+    
     private EscolherArquivoAction(JList listRepoOnline, ChatMessage message) {
 	this.message = message;
 	this.listRepoOnline = listRepoOnline;
@@ -29,20 +29,16 @@ public class EscolherArquivoAction extends MouseAdapter {
     @Override
     public void mouseClicked(MouseEvent e) {
 	if (e.getClickCount() == 2 && e.getSource() == listRepoOnline) {
-	    if (((JList) e.getSource()).locationToIndex(e.getPoint()) >= 0) {
-		if (message.getFile().getName().equals(listRepoOnline.getSelectedValue())) {
-		    AbrirAction.openFile(message.getFile());
-		}
-	    }
+	    // TODO Implementação da ação AbrirAction
 	}
     }
 
     public void setMessage(ChatMessage message) {
 	this.message = message;
     }
-
+    
     public ChatMessage getMessage() {
 	return message;
     }
-
+    
 }

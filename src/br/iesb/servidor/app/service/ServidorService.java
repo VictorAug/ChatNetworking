@@ -47,10 +47,10 @@ public class ServidorService implements Serializable {
      * outros. </br></br> <code>String</code> Nome do usuário </br></br>
      * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
      */
-    private static Map<String, ObjectOutputStream> streamMap = new HashMap<String, ObjectOutputStream>();
-
+    private static Map<String, Set<File>> mapFiles = new HashMap<String, Set<File>>();
+    
     private static ServidorService uniqueInstance;
-
+    
     public static synchronized ServidorService getInstance() {
 	if (uniqueInstance == null) {
 	    uniqueInstance = new ServidorService();
@@ -110,6 +110,7 @@ public class ServidorService implements Serializable {
 			case CONNECT:
 			    if (connectServer(message, output)) {
 				mapOnlines.put(message.getName(), output);
+				mapFiles.put(message.getName(), new HashSet<File>());
 				sendOnlinesServer();
 			    } else
 				message = null;
@@ -127,9 +128,6 @@ public class ServidorService implements Serializable {
 			case SEND_ALL:
 			    sendAllServer(message, output);
 			    break;
-			case SEND_FILE:
-			    sendFile(message, output);
-			    break;
 			default:
 			    break;
 		    }
@@ -143,26 +141,7 @@ public class ServidorService implements Serializable {
 		    System.out.println(message.getName() + " deixou o chat!");
 		}
 	    } catch (ClassNotFoundException e) {
-		streamMap.remove(message.getName());
-		System.out.println(message.getName() + " desconectou!");
-	    }
-	}
-
-    }
-
-    private void sendFile(ChatMessage message, ObjectOutputStream output) throws IOException {
-	streamMap.put(message.getName(), output);
-	if (message.getFile() != null) {
-	    for (Map.Entry<String, ObjectOutputStream> keyValue : streamMap.entrySet()) {
-//		message.setAction(Action.RECEIVE_FILE);
-		message.setAction(Action.SAVE_FILE);
-		if (!message.getName().equals(keyValue.getKey())) {
-		    if (!message.getNameReserved().isEmpty()) {
-			sendOneServer(message, output);
-		    } else {
-			sendAllServer(message, output);
-		    }
-		}
+		e.printStackTrace();
 	    }
 	}
     }
@@ -257,6 +236,10 @@ public class ServidorService implements Serializable {
 		ex.printStackTrace();
 	    }
 	}
+    }
+
+    public static Map<String, Set<File>> getMapFiles() {
+        return mapFiles;
     }
 
 }

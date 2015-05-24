@@ -8,23 +8,18 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 import javax.swing.DefaultListModel;
@@ -128,7 +123,27 @@ public class ClienteFrame extends JFrame {
 
 	btnSair = new JButton("Sair");
 	btnSair.setEnabled(false);
+	btnSair.addActionListener(e -> {
+	    ChatMessage message = new ChatMessage();
+	    message.setName(this.message.getName());
+	    message.setAction(Action.DISCONNECT);
+	    this.clientService.send(message);
+	    disconnectedClient();
+	});
+
 	btnConectar = new JButton("Conectar");
+	btnConectar.addActionListener(e -> {
+	    String name = this.txtName.getText();
+	    if (!name.isEmpty()) {
+		this.message = new ChatMessage();
+		this.message.setAction(Action.CONNECT);
+		this.message.setName(name);
+		this.clientService = new ClienteService();
+		this.socket = this.clientService.connect();
+		new Thread(new ListenerSocket(this.socket)).start();
+		this.clientService.send(message);
+	    }
+	});
 	getContentPane().add(btnConectar, "cell 10 1,grow");
 	getContentPane().add(btnSair, "cell 11 1,grow");
 
@@ -180,59 +195,6 @@ public class ClienteFrame extends JFrame {
 	txtAreaSend.setBackground(Color.BLACK);
 	scrollSend.setViewportView(txtAreaSend);
 
-	JMenuBar menuBar = new JMenuBar();
-	setJMenuBar(menuBar);
-
-	JMenu mnArquivo = new JMenu("Arquivo");
-	menuBar.add(mnArquivo);
-
-	mntmSalvarComo = new JMenuItem("Salvar como...");
-	mntmSalvarComo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
-	mnArquivo.add(mntmSalvarComo);
-
-	mntmAbrir = new JMenuItem("Abrir...");
-	mntmAbrir.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
-	mntmAbrir.addActionListener(new AbrirAction());
-
-	mntmSalvar = new JMenuItem("Salvar");
-	mntmSalvar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
-	mnArquivo.add(mntmSalvar);
-	mnArquivo.add(mntmAbrir);
-
-	JMenu mnConfiguraes = new JMenu("Configurações");
-	menuBar.add(mnConfiguraes);
-
-	mnAjuda = new JMenu("Ajuda");
-	menuBar.add(mnAjuda);
-
-	mntmInformaesDaRede = new JMenuItem("Informações da rede");
-	mntmInformaesDaRede.addActionListener(e -> JOptionPane.showMessageDialog(null, "IP do Servidor: " + this.clientService.getServerIP() + "\nIP do cliente: " + this.clientService.getClientIP(),
-		"Informações da rede", JOptionPane.DEFAULT_OPTION));
-	mnAjuda.add(mntmInformaesDaRede);
-
-	btnSair.addActionListener(e -> {
-	    ChatMessage message = new ChatMessage();
-	    message.setName(this.message.getName());
-	    message.setAction(Action.DISCONNECT);
-	    this.clientService.send(message);
-	    disconnectedClient();
-	});
-
-	btnConectar.addActionListener(e -> {
-	    String name = this.txtName.getText();
-	    if (!name.isEmpty()) {
-		this.message = new ChatMessage();
-		List<String> fileNames = new ArrayList<String>();
-		this.listRepoOnline.setListData(fileNames.toArray());
-		this.message.setAction(Action.CONNECT);
-		this.message.setName(name);
-		this.clientService = new ClienteService();
-		this.socket = this.clientService.connect();
-		new Thread(new ListenerSocket(this.socket)).start();
-		this.clientService.send(message);
-	    }
-	});
-
 	btnEscolherArquivo = new JButton("Enviar arquivo...");
 	btnEscolherArquivo.addActionListener(e -> {
 	    JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.dir")));
@@ -247,15 +209,19 @@ public class ClienteFrame extends JFrame {
 	    String name = this.message.getName();
 
 	    this.message = new ChatMessage();
+
 	    if (this.listOnlines.getSelectedIndex() > -1) {
 		this.message.setNameReserved((String) this.listOnlines.getSelectedValue());
+		this.message.setAction(Action.SEND_ONE);
 		this.listOnlines.clearSelection();
+	    } else {
+		this.message.setAction(Action.SEND_ALL);
 	    }
-	    this.message.setFile(fileChooser.getSelectedFile());
-	    this.message.setAction(Action.SEND_FILE);
+
 	    this.message.setName(name);
 	    this.txtAreaReceive.append("Você enviou o arquivo: " + fileChooser.getSelectedFile().getName() + "\n");
 	    this.clientService.send(this.message);
+
 	});
 
 	btnEnviar = new JButton("Enviar");
@@ -289,9 +255,41 @@ public class ClienteFrame extends JFrame {
 
 	btnLimpar = new JButton("Limpar");
 	btnLimpar.setEnabled(false);
-	btnLimpar.addActionListener(e -> this.txtAreaSend.setText(""));
+	btnLimpar.addActionListener(e -> {
+	    this.txtAreaSend.setText("");
+	});
 	getContentPane().add(btnLimpar, "cell 4 13,grow");
 	getContentPane().add(btnEscolherArquivo, "cell 10 13 2 1,grow");
+
+	JMenuBar menuBar = new JMenuBar();
+	setJMenuBar(menuBar);
+
+	JMenu mnArquivo = new JMenu("Arquivo");
+	menuBar.add(mnArquivo);
+
+	mntmSalvarComo = new JMenuItem("Salvar como...");
+	mntmSalvarComo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
+	mnArquivo.add(mntmSalvarComo);
+
+	mntmAbrir = new JMenuItem("Abrir...");
+	mntmAbrir.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+	mntmAbrir.addActionListener(new AbrirAction());
+
+	mntmSalvar = new JMenuItem("Salvar");
+	mntmSalvar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+	mnArquivo.add(mntmSalvar);
+	mnArquivo.add(mntmAbrir);
+
+	JMenu mnConfiguraes = new JMenu("Configurações");
+	menuBar.add(mnConfiguraes);
+
+	mnAjuda = new JMenu("Ajuda");
+	menuBar.add(mnAjuda);
+
+	mntmInformaesDaRede = new JMenuItem("Informações da rede");
+	mntmInformaesDaRede.addActionListener(e -> JOptionPane.showMessageDialog(null, "IP do Servidor: " + this.clientService.getServerIP() + "\nIP do cliente: " + this.clientService.getClientIP(),
+		"Informações da rede", JOptionPane.DEFAULT_OPTION));
+	mnAjuda.add(mntmInformaesDaRede);
     }
 
     /**
@@ -341,12 +339,6 @@ public class ClienteFrame extends JFrame {
 			case USERS_ONLINE:
 			    refreshOnlinesClient(message);
 			    break;
-			case SAVE_FILE:
-			    saveFile(message);
-			    break;
-			case RECEIVE_FILE:
-			    receiveFile(message);
-			    break;
 			default:
 			    break;
 		    }
@@ -391,37 +383,6 @@ public class ClienteFrame extends JFrame {
 	this.listOnlines.setEnabled(true);
 	this.listRepoOnline.setEnabled(true);
 	JOptionPane.showMessageDialog(this, "Você está conectado no chat!");
-    }
-
-    public void receiveFile(ChatMessage message2) {
-
-    }
-
-    public void saveFile(ChatMessage message2) {
-	try {
-	    Thread.sleep(new Random().nextInt(1000));
-
-	    Long time = System.currentTimeMillis();
-
-	    FileInputStream fileInputStream = new FileInputStream(message.getFile());
-	    FileOutputStream fileOutputStream = new FileOutputStream(new File(System.getProperty("user.dir") + "/database/arquivos/" + time + message.getFile().getName()));
-	    System.out.println(System.getProperty("user.dir") + "/database/arquivos/");
-	    FileChannel fileInput = fileInputStream.getChannel();
-	    FileChannel fileOutput = fileOutputStream.getChannel();
-
-	    Long size = fileInput.size();
-
-	    fileInput.transferTo(0, size, fileOutput);
-
-	    fileInputStream.close();
-	    fileOutputStream.close();
-	} catch (FileNotFoundException e) {
-	    e.printStackTrace();
-	} catch (IOException e) {
-	    e.printStackTrace();
-	} catch (InterruptedException e) {
-	    e.printStackTrace();
-	}
     }
 
     /**
