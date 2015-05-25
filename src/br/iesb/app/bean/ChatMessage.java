@@ -30,6 +30,8 @@ public class ChatMessage implements Serializable {
 
     /** Lista de todos os cliente online. */
     private Set<String> onlines = new HashSet<String>();
+    
+    private Set<String> filesName = new HashSet<String>();
 
     private File file;
 
@@ -92,5 +94,14 @@ public class ChatMessage implements Serializable {
 
     public void setFile(File file) {
 	this.file = file;
+	this.filesName.add(file.getName());
+    }
+
+    public Set<String> getFilesName() {
+	return filesName;
+    }
+
+    public void setFilesName(Set<String> files) {
+	this.filesName = files;
     }
 }

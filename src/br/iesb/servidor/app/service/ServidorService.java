@@ -48,9 +48,9 @@ public class ServidorService implements Serializable {
      * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
      */
     private static Map<String, Set<File>> mapFiles = new HashMap<String, Set<File>>();
-    
+
     private static ServidorService uniqueInstance;
-    
+
     public static synchronized ServidorService getInstance() {
 	if (uniqueInstance == null) {
 	    uniqueInstance = new ServidorService();
@@ -128,6 +128,9 @@ public class ServidorService implements Serializable {
 			case SEND_ALL:
 			    sendAllServer(message, output);
 			    break;
+			case SEND_FILE:
+			    sendFile(message, output);
+			    break;
 			default:
 			    break;
 		    }
@@ -169,6 +172,17 @@ public class ServidorService implements Serializable {
 	    message.setText("YES");
 	    send(message, output);
 	    return true;
+	}
+    }
+
+    public void sendFile(ChatMessage message, ObjectOutputStream output) {
+	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
+	    message.setAction(Action.RECEIVE_FILE);
+	    try {
+		kv.getValue().writeObject(message);
+	    } catch (IOException e) {
+		e.printStackTrace();
+	    }
 	}
     }
 
@@ -239,7 +253,7 @@ public class ServidorService implements Serializable {
     }
 
     public static Map<String, Set<File>> getMapFiles() {
-        return mapFiles;
+	return mapFiles;
     }
 
 }

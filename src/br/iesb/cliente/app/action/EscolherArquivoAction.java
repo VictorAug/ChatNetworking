@@ -29,7 +29,7 @@ public class EscolherArquivoAction extends MouseAdapter {
     @Override
     public void mouseClicked(MouseEvent e) {
 	if (e.getClickCount() == 2 && e.getSource() == listRepoOnline) {
-	    // TODO Implementação da ação AbrirAction
+	    AbrirAction.openFile(message.getFile());
 	}
     }
 

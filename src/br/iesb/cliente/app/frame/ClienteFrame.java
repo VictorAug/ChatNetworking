@@ -8,18 +8,23 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import javax.swing.DefaultListModel;
@@ -46,6 +51,7 @@ import net.miginfocom.swing.MigLayout;
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
 import br.iesb.cliente.app.action.AbrirAction;
+import br.iesb.cliente.app.action.EscolherArquivoAction;
 import br.iesb.cliente.app.action.SalvarAction;
 import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
@@ -205,24 +211,23 @@ public class ClienteFrame extends JFrame {
 	    if (res != JFileChooser.APPROVE_OPTION) {
 		return;
 	    }
-
 	    String name = this.message.getName();
-
 	    this.message = new ChatMessage();
-
-	    if (this.listOnlines.getSelectedIndex() > -1) {
-		this.message.setNameReserved((String) this.listOnlines.getSelectedValue());
-		this.message.setAction(Action.SEND_ONE);
-		this.listOnlines.clearSelection();
-	    } else {
-		this.message.setAction(Action.SEND_ALL);
-	    }
-
-	    this.message.setName(name);
-	    this.txtAreaReceive.append("Você enviou o arquivo: " + fileChooser.getSelectedFile().getName() + "\n");
-	    this.clientService.send(this.message);
-
-	});
+	    // if (this.listOnlines.getSelectedIndex() > -1) {
+	    // this.message.setNameReserved((String)
+	    // this.listOnlines.getSelectedValue());
+	    // this.message.setAction(Action.SEND_ONE);
+	    // this.listOnlines.clearSelection();
+	    // } else {
+	    // this.message.setAction(Action.SEND_ALL);
+	    // }
+		this.message.setAction(Action.SEND_FILE);
+		this.message.setName(name);
+		this.message.setFile(fileChooser.getSelectedFile());
+//		this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline, message));
+		this.txtAreaReceive.append("Você enviou o arquivo: " + fileChooser.getSelectedFile().getName() + "\n");
+		this.clientService.send(this.message);
+	    });
 
 	btnEnviar = new JButton("Enviar");
 	btnEnviar.setEnabled(false);
@@ -292,6 +297,34 @@ public class ClienteFrame extends JFrame {
 	mnAjuda.add(mntmInformaesDaRede);
     }
 
+    @SuppressWarnings("resource")
+    private void salvar(ChatMessage message) {
+	try {
+	    Thread.sleep(new Random().nextInt(1000));
+
+	    Long time = System.currentTimeMillis();
+
+	    File file = new File(System.getProperty("user.dir") + "/database/" + time + message.getFile().getName());
+	    FileInputStream fileInputStream = new FileInputStream(message.getFile());
+	    FileOutputStream fileOutputStream = new FileOutputStream(file);
+	    
+	    message.setFile(file);
+
+	    FileChannel fin = fileInputStream.getChannel();
+	    FileChannel fout = fileOutputStream.getChannel();
+
+	    Long size = fin.size();
+
+	    fin.transferTo(0, size, fout);
+	} catch (FileNotFoundException e) {
+	    e.printStackTrace();
+	} catch (IOException e) {
+	    e.printStackTrace();
+	} catch (InterruptedException e) {
+	    e.printStackTrace();
+	}
+    }
+
     /**
      * Classe ListenerSocket.
      */
@@ -334,10 +367,13 @@ public class ClienteFrame extends JFrame {
 			    socket.close();
 			    break;
 			case SEND_ONE:
-			    receiveClient(message);
+			    receiveMessage(message);
 			    break;
 			case USERS_ONLINE:
 			    refreshOnlinesClient(message);
+			    break;
+			case RECEIVE_FILE:
+			    receiveFile(message);
 			    break;
 			default:
 			    break;
@@ -385,6 +421,15 @@ public class ClienteFrame extends JFrame {
 	JOptionPane.showMessageDialog(this, "Você está conectado no chat!");
     }
 
+    private void receiveFile(ChatMessage message) {
+	this.listRepoOnline.setListData(message.getFilesName().toArray());
+	if (!message.getName().equals(this.message.getName())) {
+	    salvar(message);
+	}
+	listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline, message));
+	System.out.println(message.getFile().getPath());
+    }
+
     /**
      * Disconnect.
      */
@@ -412,7 +457,7 @@ public class ClienteFrame extends JFrame {
      * @param message
      *            the message
      */
-    private void receiveClient(ChatMessage message) {
+    private void receiveMessage(ChatMessage message) {
 	this.listRepoOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	if (message.getText() != null && !message.getName().equals(this.message.getName())) {
 	    this.txtAreaReceive.append(message.getName() + " diz:  " + message.getText() + "\n");
