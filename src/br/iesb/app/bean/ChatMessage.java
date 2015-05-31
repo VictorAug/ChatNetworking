@@ -2,6 +2,7 @@ package br.iesb.app.bean;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,7 +32,9 @@ public class ChatMessage implements Serializable {
     /** Lista de todos os cliente online. */
     private Set<String> onlines = new HashSet<String>();
     
-    private Set<String> fileName = new HashSet<String>();
+    private Set<String> fileNames = new HashSet<String>();
+    
+//    private Map<String, Set<String>> mapFileNames = new HashMap<String, Set<String>>();
 
     private File file;
 
@@ -94,14 +97,22 @@ public class ChatMessage implements Serializable {
 
     public void setFile(File file) {
 	this.file = file;
-	this.fileName.add(file.getName());
+	this.fileNames.add(file.getName());
     }
 
-    public Set<String> getFilesName() {
-	return fileName;
+    public Set<String> getFileNames() {
+	return fileNames;
     }
 
-    public void setFilesName(Set<String> files) {
-	this.fileName = files;
+    public void addAllFileNames(Collection<Set<String>> collection) {
+	collection.forEach(set -> fileNames.addAll(set));
     }
+//
+//    public Map<String, Set<String>> getMapFileNames() {
+//	return mapFileNames;
+//    }
+//
+//    public void setMapFileNames(Map<String, Set<String>> mapFileNames) {
+//	this.mapFileNames = mapFileNames;
+//    }
 }

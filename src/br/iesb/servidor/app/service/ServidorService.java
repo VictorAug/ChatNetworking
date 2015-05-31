@@ -21,7 +21,6 @@ import javax.swing.JOptionPane;
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
 
-// TODO: Auto-generated Javadoc
 /**
  * Class ServidorService.
  */
@@ -114,7 +113,9 @@ public class ServidorService implements Serializable {
 	    }
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Runnable#run()
 	 */
 	@Override
@@ -128,16 +129,18 @@ public class ServidorService implements Serializable {
 				mapOnlines.put(message.getName(), output);
 				mapFiles.put(message.getName(), new HashSet<String>());
 				sendOnlines();
-			    } else
+			    } else {
 				message = null;
+			    }
 			    break;
 			case DISCONNECT:
 			    if (message != null) {
 				disconnect(message, output);
-				if (!(mapOnlines.isEmpty()))
+				if (!mapOnlines.isEmpty()) {
 				    sendOnlines();
+				}
 			    }
-			    return;
+			    break;
 			case SEND_ONE:
 			    sendOne(message, output);
 			    break;
@@ -163,6 +166,110 @@ public class ServidorService implements Serializable {
 		e.printStackTrace();
 	    }
 	}
+    }
+
+    /**
+     * Send file.
+     *
+     * @param message
+     *            the message
+     * @param output
+     *            the output
+     */
+    public void sendFile(ChatMessage message, ObjectOutputStream output) {
+	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
+	    mapFiles.get(message.getName()).add(message.getFile().getName());
+	    message.setAction(Action.RECEIVE_FILE);
+	    message.addAllFileNames(mapFiles.values());
+	    try {
+		kv.getValue().writeObject(message);
+	    } catch (IOException e) {
+		e.printStackTrace();
+	    }
+	}
+    }
+
+    /**
+     * Send one.
+     *
+     * @param message
+     *            the message
+     * @param output
+     *            the output
+     */
+    private void sendOne(ChatMessage message, ObjectOutputStream output) {
+	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
+	    if (kv.getKey().equals(message.getNameReserved())) {
+		try {
+		    kv.getValue().writeObject(message);
+		    send(message, output);
+		} catch (IOException ex) {
+		    ex.printStackTrace();
+		}
+	    }
+	}
+    }
+
+    /**
+     * Send all.
+     *
+     * @param message
+     *            the message
+     * @param output
+     *            the output
+     */
+    private void sendAll(ChatMessage message, ObjectOutputStream output) {
+	mapOnlines.entrySet().forEach(kv -> {
+	    if (!kv.getKey().equals(message.getName())) {
+		message.setAction(Action.SEND_ONE);
+		try {
+		    kv.getValue().writeObject(message);
+		    send(message, output);
+		} catch (IOException ex) {
+		    ex.printStackTrace();
+		}
+	    }
+	});
+    }
+
+    /**
+     * Envia mensagem para o cliente.
+     *
+     * @param message
+     *            the message
+     * @param output
+     *            the output
+     */
+    private void send(ChatMessage message, ObjectOutputStream output) {
+	try {
+	    output.writeObject(message);
+	    System.out.println("send() → Success: mensagem " + message.toString() + " enviada!");
+	} catch (IOException ex) {
+	    System.out.println("send() → Erro: alguém saiu da sala!");
+	}
+    }
+
+    /**
+     * Envia mensagem a todos usuários onlines.
+     */
+    private void sendOnlines() {
+	Set<String> setNames = new HashSet<String>();
+	mapOnlines.entrySet().forEach(kv -> setNames.add(kv.getKey()));
+	mapFiles.toString();
+
+	ChatMessage message = new ChatMessage();
+	message.setAction(Action.USERS_ONLINE);
+	message.setOnlines(setNames);
+	message.addAllFileNames(mapFiles.values());
+
+	mapOnlines.entrySet().forEach(kv -> {
+	    message.setName(kv.getKey());
+	    try {
+		kv.getValue().writeObject(message);
+	    } catch (Exception e) {
+		System.out.println("sendOnlines() → Exception");
+	    }
+	});
     }
 
     /**
@@ -192,27 +299,12 @@ public class ServidorService implements Serializable {
     }
 
     /**
-     * Send file.
-     *
-     * @param message the message
-     * @param output the output
-     */
-    public void sendFile(ChatMessage message, ObjectOutputStream output) {
-	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    message.setAction(Action.RECEIVE_FILE);
-	    try {
-		kv.getValue().writeObject(message);
-	    } catch (IOException e) {
-		e.printStackTrace();
-	    }
-	}
-    }
-
-    /**
      * Disconnect.
      *
-     * @param message the message
-     * @param output the output
+     * @param message
+     *            the message
+     * @param output
+     *            the output
      */
     private void disconnect(ChatMessage message, ObjectOutputStream output) {
 	mapOnlines.remove(message.getName());
@@ -220,82 +312,6 @@ public class ServidorService implements Serializable {
 	message.setAction(Action.SEND_ONE);
 	sendAll(message, output);
 	System.out.println("O usuário " + message.getName() + " saiu da sala");
-    }
-
-    /**
-     * Send one.
-     *
-     * @param message the message
-     * @param output the output
-     */
-    private void sendOne(ChatMessage message, ObjectOutputStream output) {
-	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    if (kv.getKey().equals(message.getNameReserved())) {
-		try {
-		    kv.getValue().writeObject(message);
-		    send(message, output);
-		} catch (IOException ex) {
-		    ex.printStackTrace();
-		}
-	    }
-	}
-    }
-
-    /**
-     * Send all.
-     *
-     * @param message the message
-     * @param output the output
-     */
-    private void sendAll(ChatMessage message, ObjectOutputStream output) {
-	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    if (!kv.getKey().equals(message.getName())) {
-		message.setAction(Action.SEND_ONE);
-		try {
-		    kv.getValue().writeObject(message);
-		    send(message, output);
-		} catch (IOException ex) {
-		    ex.printStackTrace();
-		}
-	    }
-	}
-    }
-
-    /**
-     * Send.
-     *
-     * @param message the message
-     * @param output the output
-     */
-    private void send(ChatMessage message, ObjectOutputStream output) {
-	try {
-	    output.writeObject(message);
-	} catch (IOException ex) {
-	    System.out.println("send() → Erro: alguém saiu da sala!");
-	}
-    }
-
-    /**
-     * Envia mensagem a todos usuários onlines.
-     */
-    private void sendOnlines() {
-	Set<String> setNames = new HashSet<String>();
-	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    setNames.add(kv.getKey());
-	}
-
-	ChatMessage message = new ChatMessage();
-	message.setAction(Action.USERS_ONLINE);
-	message.setOnlines(setNames);
-
-	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    message.setName(kv.getKey());
-	    try {
-		kv.getValue().writeObject(message);
-	    } catch (IOException ex) {
-		System.out.println("Lançada uma exceção de sendOnlines()");
-	    }
-	}
     }
 
 }

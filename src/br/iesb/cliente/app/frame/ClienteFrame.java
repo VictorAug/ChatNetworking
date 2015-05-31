@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
@@ -254,9 +255,7 @@ public class ClienteFrame extends JFrame {
 
 	btnLimpar = new JButton("Limpar");
 	btnLimpar.setEnabled(false);
-	btnLimpar.addActionListener(e -> {
-	    this.txtAreaSend.setText("");
-	});
+	btnLimpar.addActionListener(e -> this.txtAreaSend.setText(""));
 	getContentPane().add(btnLimpar, "cell 4 13,grow");
 	getContentPane().add(btnEscolherArquivo, "cell 10 13 2 1,grow");
 
@@ -394,10 +393,11 @@ public class ClienteFrame extends JFrame {
      *            the message
      */
     private void receiveFile(ChatMessage message) {
-	this.listRepoOnline.setListData(message.getFilesName().toArray());
+//	System.out.println("receiveFile() → message.getMapFileNames().values(): "+message.getMapFileNames().values().toString());
+	this.listRepoOnline.setListData(message.getFileNames().toArray());
 	if (message.getName() != this.message.getName()) {
 	    salvar(message);
-	    System.out.println("receiveFile() → Thread "+txtName.getText());
+	    System.out.println("receiveFile() → Thread " + txtName.getText());
 	    if (flag) {
 		txtAreaReceive.append(message.getName() + " enviou o arquivo: " + message.getFile().getName().replaceAll("\\d*", "") + "\n");
 	    } else {
@@ -429,6 +429,7 @@ public class ClienteFrame extends JFrame {
 	System.out.println("Thread do(a) " + message.getName());
 	Set<String> names = message.getOnlines();
 	names.remove(message.getName());
+	this.listRepoOnline.setListData(message.getFileNames().toArray());
 	String[] array = (String[]) names.toArray(new String[names.size()]);
 	this.listOnlines.setListData(array);
 	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
