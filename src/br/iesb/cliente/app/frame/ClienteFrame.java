@@ -97,6 +97,8 @@ public class ClienteFrame extends JFrame {
 
     private DefaultListModel listModel;
 
+    private boolean flag = true;
+
     /**
      * Create the application.
      */
@@ -213,21 +215,13 @@ public class ClienteFrame extends JFrame {
 	    }
 	    String name = this.message.getName();
 	    this.message = new ChatMessage();
-	    // if (this.listOnlines.getSelectedIndex() > -1) {
-	    // this.message.setNameReserved((String)
-	    // this.listOnlines.getSelectedValue());
-	    // this.message.setAction(Action.SEND_ONE);
-	    // this.listOnlines.clearSelection();
-	    // } else {
-	    // this.message.setAction(Action.SEND_ALL);
-	    // }
-		this.message.setAction(Action.SEND_FILE);
-		this.message.setName(name);
-		this.message.setFile(fileChooser.getSelectedFile());
-//		this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline, message));
-		this.txtAreaReceive.append("Você enviou o arquivo: " + fileChooser.getSelectedFile().getName() + "\n");
-		this.clientService.send(this.message);
-	    });
+	    this.message.setAction(Action.SEND_FILE);
+	    this.message.setName(name);
+	    this.message.setFile(fileChooser.getSelectedFile());
+	    this.txtAreaReceive.append("Você enviou o arquivo: " + fileChooser.getSelectedFile().getName() + "\n");
+	    flag = false;
+	    this.clientService.send(this.message);
+	});
 
 	btnEnviar = new JButton("Enviar");
 	btnEnviar.setEnabled(false);
@@ -307,7 +301,7 @@ public class ClienteFrame extends JFrame {
 	    File file = new File(System.getProperty("user.dir") + "/database/" + time + message.getFile().getName());
 	    FileInputStream fileInputStream = new FileInputStream(message.getFile());
 	    FileOutputStream fileOutputStream = new FileOutputStream(file);
-	    
+
 	    message.setFile(file);
 
 	    FileChannel fin = fileInputStream.getChannel();
@@ -370,7 +364,7 @@ public class ClienteFrame extends JFrame {
 			    receiveMessage(message);
 			    break;
 			case USERS_ONLINE:
-			    refreshOnlinesClient(message);
+			    refreshOnlines(message);
 			    break;
 			case RECEIVE_FILE:
 			    receiveFile(message);
@@ -391,6 +385,54 @@ public class ClienteFrame extends JFrame {
 		}
 	    }
 	}
+    }
+
+    /**
+     * Receive file.
+     *
+     * @param message
+     *            the message
+     */
+    private void receiveFile(ChatMessage message) {
+	this.listRepoOnline.setListData(message.getFilesName().toArray());
+	if (message.getName() != this.message.getName()) {
+	    salvar(message);
+	    System.out.println("receiveFile() → Thread "+txtName.getText());
+	    if (flag) {
+		txtAreaReceive.append(message.getName() + " enviou o arquivo: " + message.getFile().getName().replaceAll("\\d*", "") + "\n");
+	    } else {
+		flag = true;
+	    }
+	}
+    }
+
+    /**
+     * Receive.
+     *
+     * @param message
+     *            the message
+     */
+    private void receiveMessage(ChatMessage message) {
+	this.listRepoOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+	if (message.getText() != null && !message.getName().equals(this.message.getName())) {
+	    this.txtAreaReceive.append(message.getName() + " diz:  " + message.getText() + "\n");
+	}
+    }
+
+    /**
+     * Refresh onlines.
+     *
+     * @param message
+     *            the message
+     */
+    private void refreshOnlines(ChatMessage message) {
+	System.out.println("Thread do(a) " + message.getName());
+	Set<String> names = message.getOnlines();
+	names.remove(message.getName());
+	String[] array = (String[]) names.toArray(new String[names.size()]);
+	this.listOnlines.setListData(array);
+	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+	this.listOnlines.setLayoutOrientation(JList.VERTICAL);
     }
 
     /**
@@ -421,15 +463,6 @@ public class ClienteFrame extends JFrame {
 	JOptionPane.showMessageDialog(this, "Você está conectado no chat!");
     }
 
-    private void receiveFile(ChatMessage message) {
-	this.listRepoOnline.setListData(message.getFilesName().toArray());
-	if (!message.getName().equals(this.message.getName())) {
-	    salvar(message);
-	}
-	listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline, message));
-	System.out.println(message.getFile().getPath());
-    }
-
     /**
      * Disconnect.
      */
@@ -449,34 +482,5 @@ public class ClienteFrame extends JFrame {
 	this.txtAreaReceive.setText("");
 	this.txtAreaSend.setText("");
 	JOptionPane.showMessageDialog(this, "Você saiu do chat!");
-    }
-
-    /**
-     * Receive.
-     *
-     * @param message
-     *            the message
-     */
-    private void receiveMessage(ChatMessage message) {
-	this.listRepoOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-	if (message.getText() != null && !message.getName().equals(this.message.getName())) {
-	    this.txtAreaReceive.append(message.getName() + " diz:  " + message.getText() + "\n");
-	}
-    }
-
-    /**
-     * Refresh onlines.
-     *
-     * @param message
-     *            the message
-     */
-    private void refreshOnlinesClient(ChatMessage message) {
-	System.out.println(message.getOnlines().toString());
-	Set<String> names = message.getOnlines();
-	names.remove(message.getName());
-	String[] array = (String[]) names.toArray(new String[names.size()]);
-	this.listOnlines.setListData(array);
-	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-	this.listOnlines.setLayoutOrientation(JList.VERTICAL);
     }
 }

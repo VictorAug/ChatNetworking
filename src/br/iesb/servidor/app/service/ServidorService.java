@@ -21,6 +21,10 @@ import javax.swing.JOptionPane;
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
 
+// TODO: Auto-generated Javadoc
+/**
+ * Class ServidorService.
+ */
 @SuppressWarnings("unused")
 public class ServidorService implements Serializable {
 
@@ -47,10 +51,16 @@ public class ServidorService implements Serializable {
      * outros. </br></br> <code>String</code> Nome do usuário </br></br>
      * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
      */
-    private static Map<String, Set<File>> mapFiles = new HashMap<String, Set<File>>();
+    private static Map<String, Set<String>> mapFiles = new HashMap<String, Set<String>>();
 
+    /** Atributo unique instance. */
     private static ServidorService uniqueInstance;
 
+    /**
+     * Retorna uma instância de ServidorService.
+     *
+     * @return uma instância de ServidorService
+     */
     public static synchronized ServidorService getInstance() {
 	if (uniqueInstance == null) {
 	    uniqueInstance = new ServidorService();
@@ -58,6 +68,9 @@ public class ServidorService implements Serializable {
 	return uniqueInstance;
     }
 
+    /**
+     * Instancia um novo servidor service.
+     */
     private ServidorService() {
 	try {
 	    serverSocket = new ServerSocket(5555);
@@ -101,6 +114,9 @@ public class ServidorService implements Serializable {
 	    }
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Runnable#run()
+	 */
 	@Override
 	public void run() {
 	    ChatMessage message = null;
@@ -108,25 +124,25 @@ public class ServidorService implements Serializable {
 		while ((message = (ChatMessage) input.readObject()) != null) {
 		    switch (message.getAction()) {
 			case CONNECT:
-			    if (connectServer(message, output)) {
+			    if (connect(message, output)) {
 				mapOnlines.put(message.getName(), output);
-				mapFiles.put(message.getName(), new HashSet<File>());
-				sendOnlinesServer();
+				mapFiles.put(message.getName(), new HashSet<String>());
+				sendOnlines();
 			    } else
 				message = null;
 			    break;
 			case DISCONNECT:
 			    if (message != null) {
-				disconnectServer(message, output);
+				disconnect(message, output);
 				if (!(mapOnlines.isEmpty()))
-				    sendOnlinesServer();
+				    sendOnlines();
 			    }
 			    return;
 			case SEND_ONE:
-			    sendOneServer(message, output);
+			    sendOne(message, output);
 			    break;
 			case SEND_ALL:
-			    sendAllServer(message, output);
+			    sendAll(message, output);
 			    break;
 			case SEND_FILE:
 			    sendFile(message, output);
@@ -139,8 +155,8 @@ public class ServidorService implements Serializable {
 		ChatMessage cm = new ChatMessage();
 		if (message != null) {
 		    cm.setName(message.getName());
-		    disconnectServer(cm, output);
-		    sendOnlinesServer();
+		    disconnect(cm, output);
+		    sendOnlines();
 		    System.out.println(message.getName() + " deixou o chat!");
 		}
 	    } catch (ClassNotFoundException e) {
@@ -158,7 +174,7 @@ public class ServidorService implements Serializable {
      *            objeto que será enviado pelo servidor
      * @return true, se a conexão foi estabelecida
      */
-    private boolean connectServer(ChatMessage message, ObjectOutputStream output) {
+    private boolean connect(ChatMessage message, ObjectOutputStream output) {
 	if (mapOnlines.size() == 0) {
 	    message.setText("YES");
 	    send(message, output);
@@ -175,6 +191,12 @@ public class ServidorService implements Serializable {
 	}
     }
 
+    /**
+     * Send file.
+     *
+     * @param message the message
+     * @param output the output
+     */
     public void sendFile(ChatMessage message, ObjectOutputStream output) {
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    message.setAction(Action.RECEIVE_FILE);
@@ -186,15 +208,27 @@ public class ServidorService implements Serializable {
 	}
     }
 
-    private void disconnectServer(ChatMessage message, ObjectOutputStream output) {
+    /**
+     * Disconnect.
+     *
+     * @param message the message
+     * @param output the output
+     */
+    private void disconnect(ChatMessage message, ObjectOutputStream output) {
 	mapOnlines.remove(message.getName());
 	message.setText(" deixou o chat!");
 	message.setAction(Action.SEND_ONE);
-	sendAllServer(message, output);
+	sendAll(message, output);
 	System.out.println("O usuário " + message.getName() + " saiu da sala");
     }
 
-    private void sendOneServer(ChatMessage message, ObjectOutputStream output) {
+    /**
+     * Send one.
+     *
+     * @param message the message
+     * @param output the output
+     */
+    private void sendOne(ChatMessage message, ObjectOutputStream output) {
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    if (kv.getKey().equals(message.getNameReserved())) {
 		try {
@@ -207,7 +241,13 @@ public class ServidorService implements Serializable {
 	}
     }
 
-    private void sendAllServer(ChatMessage message, ObjectOutputStream output) {
+    /**
+     * Send all.
+     *
+     * @param message the message
+     * @param output the output
+     */
+    private void sendAll(ChatMessage message, ObjectOutputStream output) {
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    if (!kv.getKey().equals(message.getName())) {
 		message.setAction(Action.SEND_ONE);
@@ -221,18 +261,24 @@ public class ServidorService implements Serializable {
 	}
     }
 
+    /**
+     * Send.
+     *
+     * @param message the message
+     * @param output the output
+     */
     private void send(ChatMessage message, ObjectOutputStream output) {
 	try {
 	    output.writeObject(message);
 	} catch (IOException ex) {
-	    ex.printStackTrace();
+	    System.out.println("send() → Erro: alguém saiu da sala!");
 	}
     }
 
     /**
      * Envia mensagem a todos usuários onlines.
      */
-    private void sendOnlinesServer() {
+    private void sendOnlines() {
 	Set<String> setNames = new HashSet<String>();
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
 	    setNames.add(kv.getKey());
@@ -247,13 +293,9 @@ public class ServidorService implements Serializable {
 	    try {
 		kv.getValue().writeObject(message);
 	    } catch (IOException ex) {
-		ex.printStackTrace();
+		System.out.println("Lançada uma exceção de sendOnlines()");
 	    }
 	}
-    }
-
-    public static Map<String, Set<File>> getMapFiles() {
-	return mapFiles;
     }
 
 }
