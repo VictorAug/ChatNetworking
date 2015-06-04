@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +51,7 @@ public class ServidorService implements Serializable {
      * outros. </br></br> <code>String</code> Nome do usuário </br></br>
      * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
      */
-    private static Map<String, Set<String>> mapFiles = new HashMap<String, Set<String>>();
+    private static Map<String, Set<File>> mapFiles = new HashMap<String, Set<File>>();
 
     /** Atributo unique instance. */
     private static ServidorService uniqueInstance;
@@ -127,7 +128,7 @@ public class ServidorService implements Serializable {
 			case CONNECT:
 			    if (connect(message, output)) {
 				mapOnlines.put(message.getName(), output);
-				mapFiles.put(message.getName(), new HashSet<String>());
+				mapFiles.put(message.getName(), new HashSet<File>());
 				sendOnlines();
 			    } else {
 				message = null;
@@ -178,9 +179,11 @@ public class ServidorService implements Serializable {
      */
     public void sendFile(ChatMessage message, ObjectOutputStream output) {
 	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    mapFiles.get(message.getName()).add(message.getFile().getName());
+	    mapFiles.get(message.getName()).add(message.getFile());
 	    message.setAction(Action.RECEIVE_FILE);
-	    message.addAllFileNames(mapFiles.values());
+	    Set<String> fileNames = new HashSet<String>();
+	    mapFiles.values().forEach(action -> action.forEach(file -> fileNames.add(file.getName())));
+	    message.addAllFileNames(fileNames);
 	    try {
 		kv.getValue().writeObject(message);
 	    } catch (IOException e) {
@@ -260,7 +263,10 @@ public class ServidorService implements Serializable {
 	ChatMessage message = new ChatMessage();
 	message.setAction(Action.USERS_ONLINE);
 	message.setOnlines(setNames);
-	message.addAllFileNames(mapFiles.values());
+
+	Set<String> fileNames = new HashSet<String>();
+	mapFiles.values().forEach(action -> action.forEach(file -> fileNames.add(file.getName())));
+	message.addAllFileNames(fileNames);
 
 	mapOnlines.entrySet().forEach(kv -> {
 	    message.setName(kv.getKey());
@@ -312,6 +318,10 @@ public class ServidorService implements Serializable {
 	message.setAction(Action.SEND_ONE);
 	sendAll(message, output);
 	System.out.println("O usuário " + message.getName() + " saiu da sala");
+    }
+
+    public static Map<String, Set<File>> getMapFiles() {
+	return mapFiles;
     }
 
 }

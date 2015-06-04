@@ -4,8 +4,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,12 +17,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Date;
 import java.util.Random;
 import java.util.Set;
 
@@ -56,7 +49,6 @@ import br.iesb.cliente.app.action.EscolherArquivoAction;
 import br.iesb.cliente.app.action.SalvarAction;
 import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
-import br.iesb.servidor.app.service.ServidorService;
 
 /**
  * Class ClienteFrame.
@@ -121,41 +113,6 @@ public class ClienteFrame extends JFrame {
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	getContentPane().setLayout(new MigLayout("", "[150][fill][][16.00][][grow][40][20][20][20][30][30][0.01][50][][][50]", "[5][15][5][][][20.00][grow][40][][][15][15][15][15]"));
 
-	txtName = new JTextField();
-	txtName.setCaretColor(Color.ORANGE);
-	txtName.setFont(new Font("Monospaced", Font.BOLD, 11));
-	txtName.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Usu\u00E1rio", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
-	txtName.setForeground(new Color(255, 165, 0));
-	txtName.setBackground(Color.BLACK);
-	getContentPane().add(txtName, "cell 0 0 10 3,grow");
-	txtName.setColumns(10);
-
-	btnSair = new JButton("Sair");
-	btnSair.setEnabled(false);
-	btnSair.addActionListener(e -> {
-	    ChatMessage message = new ChatMessage();
-	    message.setName(this.message.getName());
-	    message.setAction(Action.DISCONNECT);
-	    this.clientService.send(message);
-	    disconnectedClient();
-	});
-
-	btnConectar = new JButton("Conectar");
-	btnConectar.addActionListener(e -> {
-	    String name = this.txtName.getText();
-	    if (!name.isEmpty()) {
-		this.message = new ChatMessage();
-		this.message.setAction(Action.CONNECT);
-		this.message.setName(name);
-		this.clientService = new ClienteService();
-		this.socket = this.clientService.connect();
-		new Thread(new ListenerSocket(this.socket)).start();
-		this.clientService.send(message);
-	    }
-	});
-	getContentPane().add(btnConectar, "cell 10 1,grow");
-	getContentPane().add(btnSair, "cell 11 1,grow");
-
 	listModel = new DefaultListModel();
 
 	listOnlines = new JList(listModel);
@@ -163,7 +120,8 @@ public class ClienteFrame extends JFrame {
 	listOnlines.setModel(new DefaultListModel<String>());
 	listOnlines.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Online", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
 	listOnlines.setBackground(Color.BLACK);
-	listOnlines.setForeground(Color.YELLOW);
+	listOnlines.setForeground(new Color(255, 51, 51));
+	listOnlines.setFont(new Font(Font.MONOSPACED, Font.BOLD, 12));
 	getContentPane().add(listOnlines, "cell 13 0 4 14,grow");
 
 	scrollReceive = new JScrollPane();
@@ -204,10 +162,45 @@ public class ClienteFrame extends JFrame {
 	txtAreaSend.setBackground(Color.BLACK);
 	scrollSend.setViewportView(txtAreaSend);
 
+	txtName = new JTextField();
+	txtName.setCaretColor(Color.ORANGE);
+	txtName.setFont(new Font("Monospaced", Font.BOLD, 11));
+	txtName.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Usu\u00E1rio", TitledBorder.LEADING, TitledBorder.TOP, null, Color.LIGHT_GRAY));
+	txtName.setForeground(new Color(255, 165, 0));
+	txtName.setBackground(Color.BLACK);
+	getContentPane().add(txtName, "cell 0 0 10 3,grow");
+	txtName.setColumns(10);
+
+	btnSair = new JButton("Sair");
+	btnSair.setEnabled(false);
+	btnSair.addActionListener(e -> {
+	    ChatMessage message = new ChatMessage();
+	    message.setName(this.message.getName());
+	    message.setAction(Action.DISCONNECT);
+	    this.clientService.send(message);
+	    disconnectedClient();
+	});
+
+	btnConectar = new JButton("Conectar");
+	btnConectar.addActionListener(e -> {
+	    String name = this.txtName.getText();
+	    if (!name.isEmpty()) {
+		this.message = new ChatMessage();
+		this.message.setAction(Action.CONNECT);
+		this.message.setName(name);
+		this.clientService = new ClienteService();
+		this.socket = this.clientService.connect();
+		new Thread(new ListenerSocket(this.socket)).start();
+		this.clientService.send(message);
+	    }
+	});
+	getContentPane().add(btnConectar, "cell 10 1,grow");
+	getContentPane().add(btnSair, "cell 11 1,grow");
+
 	btnEscolherArquivo = new JButton("Enviar arquivo...");
 	btnEscolherArquivo.addActionListener(e -> {
 	    JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.dir")));
-	    fileChooser.setMultiSelectionEnabled(true);
+	    fileChooser.setMultiSelectionEnabled(false);
 	    fileChooser.setAcceptAllFileFilterUsed(false);
 	    fileChooser.setFileFilter(new FileNameExtensionFilter("image files (*jpg)", "jpg"));
 	    int res = fileChooser.showOpenDialog(new JTextArea());
@@ -297,7 +290,7 @@ public class ClienteFrame extends JFrame {
 
 	    Long time = System.currentTimeMillis();
 
-	    File file = new File(System.getProperty("user.dir") + "/database/" + time + message.getFile().getName());
+	    File file = new File(System.getProperty("user.dir") + "/database/" + this.message.getName() + message.getFile().getName());
 	    FileInputStream fileInputStream = new FileInputStream(message.getFile());
 	    FileOutputStream fileOutputStream = new FileOutputStream(file);
 
@@ -309,8 +302,10 @@ public class ClienteFrame extends JFrame {
 	    Long size = fin.size();
 
 	    fin.transferTo(0, size, fout);
+	    if (this.listRepoOnline.getMouseListeners().length == 0 && this.listRepoOnline.getModel().getSize() > 0) {
+		this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline, message));
+	    }
 	} catch (FileNotFoundException e) {
-	    e.printStackTrace();
 	} catch (IOException e) {
 	    e.printStackTrace();
 	} catch (InterruptedException e) {
@@ -393,13 +388,14 @@ public class ClienteFrame extends JFrame {
      *            the message
      */
     private void receiveFile(ChatMessage message) {
-//	System.out.println("receiveFile() → message.getMapFileNames().values(): "+message.getMapFileNames().values().toString());
 	this.listRepoOnline.setListData(message.getFileNames().toArray());
-	if (message.getName() != this.message.getName()) {
+	this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline, message));
+	if (!message.getName().equals(this.message.getName())) {
+	    System.out.println(message.getName() +"\n"+this.message.getName());
 	    salvar(message);
 	    System.out.println("receiveFile() → Thread " + txtName.getText());
 	    if (flag) {
-		txtAreaReceive.append(message.getName() + " enviou o arquivo: " + message.getFile().getName().replaceAll("\\d*", "") + "\n");
+		txtAreaReceive.append(message.getName() + " enviou o arquivo: " + message.getFile().getName() + "\n");
 	    } else {
 		flag = true;
 	    }
@@ -429,7 +425,6 @@ public class ClienteFrame extends JFrame {
 	System.out.println("Thread do(a) " + message.getName());
 	Set<String> names = message.getOnlines();
 	names.remove(message.getName());
-	this.listRepoOnline.setListData(message.getFileNames().toArray());
 	String[] array = (String[]) names.toArray(new String[names.size()]);
 	this.listOnlines.setListData(array);
 	this.listOnlines.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

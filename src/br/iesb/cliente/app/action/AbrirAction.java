@@ -62,4 +62,28 @@ public class AbrirAction extends AbstractAction {
 	}
     }
 
+    /**
+     * Open file by name.
+     *
+     * @param name
+     *            the name
+     */
+    public static void openFileByName(String name) {
+	try {
+	    File arquivo = new File(System.getProperty("user.dir") + "/database/");
+	    File file = null;
+	    File[] listFiles = arquivo.listFiles();
+	    for (int i = 0; i < listFiles.length; i++) {
+		if (listFiles[i].getName().contains(name)) {
+		    file = listFiles[i];
+		    break;
+		}
+	    }
+	    arquivo.setReadOnly();
+	    Desktop.getDesktop().open(file);
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+    }
+
 }
