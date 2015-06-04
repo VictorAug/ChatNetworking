@@ -391,7 +391,7 @@ public class ClienteFrame extends JFrame {
 	this.listRepoOnline.setListData(message.getFileNames().toArray());
 	this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline, message));
 	if (!message.getName().equals(this.message.getName())) {
-	    System.out.println(message.getName() +"\n"+this.message.getName());
+	    System.out.println(message.getName() + "\n" + this.message.getName());
 	    salvar(message);
 	    System.out.println("receiveFile() → Thread " + txtName.getText());
 	    if (flag) {

@@ -47,9 +47,9 @@ public class ServidorService implements Serializable {
 
     /**
      * Lista de arquivos disponíveis no servidor. <br>
-     * Vai servir p/ redistribuir o arquivo que o usuário digitar p/ todos os
+     * Vai servir p/ redistribuir o arquivo que o usuário enviar p/ todos os
      * outros. </br></br> <code>String</code> Nome do usuário </br></br>
-     * <code>ObjectOutputStream</code> Tudo o que o usuário for digitar.
+     * <code>Set<File></code> Tudo o que o usuário for enviar.
      */
     private static Map<String, Set<File>> mapFiles = new HashMap<String, Set<File>>();
 

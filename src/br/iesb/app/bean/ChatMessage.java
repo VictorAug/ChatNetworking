@@ -2,10 +2,8 @@ package br.iesb.app.bean;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -37,6 +35,8 @@ public class ChatMessage implements Serializable {
     private Set<String> fileNames = new HashSet<String>();
 
     private File file;
+
+    private Set<File> files = new LinkedHashSet<File>();
 
     /**
      * Para cada mensagem que o cliente envia p/ o servidor, ele vai dizer qual
@@ -107,5 +107,19 @@ public class ChatMessage implements Serializable {
     public void addAllFileNames(Set<String> fileNames) {
 	fileNames.forEach(file -> this.fileNames.add(file));
     }
-    
+
+    public Set<File> getFiles() {
+	return files;
+    }
+
+    public void setFiles(Set<File> files) {
+	this.files = files;
+    }
+
+    @Override
+    public String toString() {
+	return "ChatMessage [name=" + name + ", text=" + text + ", nameReserved=" + nameReserved + ", onlines=" + onlines + ", fileNames=" + fileNames + ", file=" + file + ", files=" + files
+		+ ", action=" + action + "]";
+    }
+
 }
