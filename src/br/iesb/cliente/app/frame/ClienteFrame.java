@@ -17,7 +17,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -44,6 +47,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import net.miginfocom.swing.MigLayout;
 import br.iesb.app.bean.ChatMessage;
 import br.iesb.app.bean.ChatMessage.Action;
+import br.iesb.app.utils.DocumentFilter;
+import br.iesb.app.utils.ImageFilter;
+import br.iesb.app.utils.MidiaFilter;
 import br.iesb.cliente.app.action.AbrirAction;
 import br.iesb.cliente.app.action.EscolherArquivoAction;
 import br.iesb.cliente.app.action.SalvarAction;
@@ -105,7 +111,7 @@ public class ClienteFrame extends JFrame {
     private void initialize() {
 	UIManager.put("TitledBorder.border", new LineBorder(Color.lightGray, 1));
 
-	this.setTitle("BarbozAugusto's ChatNetworking");
+	setTitle("ChatNetworking");
 
 	getContentPane().setForeground(Color.LIGHT_GRAY);
 	getContentPane().setBackground(Color.black);
@@ -183,7 +189,7 @@ public class ClienteFrame extends JFrame {
 
 	btnConectar = new JButton("Conectar");
 	btnConectar.addActionListener(e -> {
-	    String name = this.txtName.getText();
+	    String name = this.txtName.getText().trim();
 	    if (!name.isEmpty()) {
 		this.message = new ChatMessage();
 		this.message.setAction(Action.CONNECT);
@@ -198,11 +204,14 @@ public class ClienteFrame extends JFrame {
 	getContentPane().add(btnSair, "cell 11 1,grow");
 
 	btnEscolherArquivo = new JButton("Enviar arquivo...");
+	btnEscolherArquivo.setEnabled(false);
 	btnEscolherArquivo.addActionListener(e -> {
 	    JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.dir")));
-	    fileChooser.setMultiSelectionEnabled(false);
+	    fileChooser.setMultiSelectionEnabled(true);
 	    fileChooser.setAcceptAllFileFilterUsed(false);
-	    fileChooser.setFileFilter(new FileNameExtensionFilter("image files (*jpg)", "jpg"));
+	    fileChooser.addChoosableFileFilter(new ImageFilter());
+	    fileChooser.addChoosableFileFilter(new DocumentFilter());
+	    fileChooser.addChoosableFileFilter(new MidiaFilter());
 	    int res = fileChooser.showOpenDialog(new JTextArea());
 	    if (res != JFileChooser.APPROVE_OPTION) {
 		return;
@@ -211,9 +220,9 @@ public class ClienteFrame extends JFrame {
 	    this.message = new ChatMessage();
 	    this.message.setAction(Action.SEND_FILE);
 	    this.message.setName(name);
-	    this.message.setFile(fileChooser.getSelectedFile());
-	    this.txtAreaReceive.append("Você enviou o arquivo: " + fileChooser.getSelectedFile().getName() + "\n");
-	    flag = false;
+	    this.message.addFiles(fileChooser.getSelectedFiles());
+	    this.txtAreaReceive.append("Você enviou o(s) arquivo(s): " + this.message.getFileNames() + "\n");
+	    this.flag = false;
 	    this.clientService.send(this.message);
 	});
 
@@ -281,36 +290,6 @@ public class ClienteFrame extends JFrame {
 	mntmInformaesDaRede.addActionListener(e -> JOptionPane.showMessageDialog(null, "IP do Servidor: " + this.clientService.getServerIP() + "\nIP do cliente: " + this.clientService.getClientIP(),
 		"Informações da rede", JOptionPane.DEFAULT_OPTION));
 	mnAjuda.add(mntmInformaesDaRede);
-    }
-
-    @SuppressWarnings("resource")
-    private void salvar(ChatMessage message) {
-	try {
-	    Thread.sleep(new Random().nextInt(1000));
-
-	    Long time = System.currentTimeMillis();
-
-	    File file = new File(System.getProperty("user.dir") + "/database/" + this.message.getName() + message.getFile().getName());
-	    FileInputStream fileInputStream = new FileInputStream(message.getFile());
-	    FileOutputStream fileOutputStream = new FileOutputStream(file);
-
-	    message.setFile(file);
-
-	    FileChannel fin = fileInputStream.getChannel();
-	    FileChannel fout = fileOutputStream.getChannel();
-
-	    Long size = fin.size();
-
-	    fin.transferTo(0, size, fout);
-	    if (this.listRepoOnline.getMouseListeners().length == 0 && this.listRepoOnline.getModel().getSize() > 0) {
-		this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline, message));
-	    }
-	} catch (FileNotFoundException e) {
-	} catch (IOException e) {
-	    e.printStackTrace();
-	} catch (InterruptedException e) {
-	    e.printStackTrace();
-	}
     }
 
     /**
@@ -388,17 +367,47 @@ public class ClienteFrame extends JFrame {
      *            the message
      */
     private void receiveFile(ChatMessage message) {
-	this.listRepoOnline.setListData(message.getFileNames().toArray());
-	this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline, message));
-	if (!message.getName().equals(this.message.getName())) {
-	    System.out.println(message.getName() + "\n" + this.message.getName());
-	    salvar(message);
-	    System.out.println("receiveFile() → Thread " + txtName.getText());
-	    if (flag) {
-		txtAreaReceive.append(message.getName() + " enviou o arquivo: " + message.getFile().getName() + "\n");
-	    } else {
-		flag = true;
-	    }
+	System.out.println("receiveFile() → Thread " + txtName.getText());
+	System.out.println("message.getName() → " + message.getName() + "\n" + "this.message.getName() → " + this.message.getName());
+	
+	Set<String> arrayList = new HashSet<String>();
+	for (int i = 0; i < this.listRepoOnline.getModel().getSize(); i++) {
+	    arrayList.add((String) this.listRepoOnline.getModel().getElementAt(i));
+	}
+	arrayList.addAll(message.getFileNames());
+	this.listRepoOnline.setListData(arrayList.toArray());
+	this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline));
+
+	if (this.message.getName().equals(message.getName())) {
+	    this.message.getFiles().forEach(f -> salvar(f));
+	} else {
+	    message.getFiles().forEach(f -> salvar(f));
+//	    if (flag) {
+		txtAreaReceive.append(message.getName() + " enviou o(s) arquivo(s): " + message.getFileNames() + "\n");
+//	    } else {
+//		flag = true;
+//	    }
+	}
+    }
+
+    @SuppressWarnings("resource")
+    private void salvar(File escolhido) {
+	try {
+	    File novo = new File(System.getProperty("user.dir") + "/database/" + this.message.getName() + "_" + escolhido.getName());
+	    FileInputStream fileInputStream = new FileInputStream(escolhido);
+	    FileOutputStream fileOutputStream = new FileOutputStream(novo);
+
+	    EscolherArquivoAction.getInstance().addFileName(novo.getName());
+
+	    FileChannel fin = fileInputStream.getChannel();
+	    FileChannel fout = fileOutputStream.getChannel();
+
+	    Long size = fin.size();
+
+	    fin.transferTo(0, size, fout);
+	} catch (FileNotFoundException e) {
+	} catch (IOException e) {
+	    e.printStackTrace();
 	}
     }
 
@@ -422,7 +431,7 @@ public class ClienteFrame extends JFrame {
      *            the message
      */
     private void refreshOnlines(ChatMessage message) {
-	System.out.println("Thread do(a) " + message.getName());
+	System.out.println("refreshOnlines() → Thread do(a) " + message.getName());
 	Set<String> names = message.getOnlines();
 	names.remove(message.getName());
 	String[] array = (String[]) names.toArray(new String[names.size()]);
@@ -445,6 +454,7 @@ public class ClienteFrame extends JFrame {
 	}
 	this.message = message;
 	this.btnConectar.setEnabled(false);
+	this.btnEscolherArquivo.setEnabled(true);
 	this.txtName.setEditable(false);
 	this.btnSair.setEnabled(true);
 	this.scrollSend.setEnabled(true);

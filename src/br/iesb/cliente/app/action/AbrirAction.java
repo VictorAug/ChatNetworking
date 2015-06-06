@@ -70,16 +70,16 @@ public class AbrirAction extends AbstractAction {
      */
     public static void openFileByName(String name) {
 	try {
-	    File arquivo = new File(System.getProperty("user.dir") + "/database/");
+	    File diretorio = new File(System.getProperty("user.dir") + "/database/");
 	    File file = null;
-	    File[] listFiles = arquivo.listFiles();
+	    File[] listFiles = diretorio.listFiles();
 	    for (int i = 0; i < listFiles.length; i++) {
 		if (listFiles[i].getName().contains(name)) {
 		    file = listFiles[i];
 		    break;
 		}
 	    }
-	    arquivo.setReadOnly();
+	    diretorio.setReadOnly();
 	    Desktop.getDesktop().open(file);
 	} catch (IOException e) {
 	    e.printStackTrace();

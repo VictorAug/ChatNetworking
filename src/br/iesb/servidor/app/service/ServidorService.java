@@ -7,15 +7,11 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
 
@@ -25,7 +21,6 @@ import br.iesb.app.bean.ChatMessage.Action;
 /**
  * Class ServidorService.
  */
-@SuppressWarnings("unused")
 public class ServidorService implements Serializable {
 
     /** Constante serialVersionUID. */
@@ -51,8 +46,8 @@ public class ServidorService implements Serializable {
      * outros. </br></br> <code>String</code> Nome do usuário </br></br>
      * <code>Set<File></code> Tudo o que o usuário for enviar.
      */
-    private static Map<String, Set<File>> mapFiles = new HashMap<String, Set<File>>();
-
+    private static Map<String, LinkedHashSet<File>> mapFiles = new HashMap<String, LinkedHashSet<File>>();
+    
     /** Atributo unique instance. */
     private static ServidorService uniqueInstance;
 
@@ -80,8 +75,9 @@ public class ServidorService implements Serializable {
 		new Thread(new ListenerSocket(socket)).start();
 	    }
 	} catch (IOException e) {
-	    if (!(mapOnlines.isEmpty()))
+	    if (!mapOnlines.isEmpty()) {
 		JOptionPane.showMessageDialog(null, "Servidor já está rodando...");
+	    }
 	}
     }
 
@@ -128,7 +124,7 @@ public class ServidorService implements Serializable {
 			case CONNECT:
 			    if (connect(message, output)) {
 				mapOnlines.put(message.getName(), output);
-				mapFiles.put(message.getName(), new HashSet<File>());
+				mapFiles.put(message.getName(), new LinkedHashSet<File>());
 				sendOnlines();
 			    } else {
 				message = null;
@@ -178,18 +174,18 @@ public class ServidorService implements Serializable {
      *            the output
      */
     public void sendFile(ChatMessage message, ObjectOutputStream output) {
-	for (Map.Entry<String, ObjectOutputStream> kv : mapOnlines.entrySet()) {
-	    mapFiles.get(message.getName()).add(message.getFile());
+	mapOnlines.entrySet().forEach(kv -> {
+	    if (message.getName().equals(kv.getKey())) {
+		mapFiles.get(kv.getKey()).addAll(message.getFiles());
+		message.setFiles(mapFiles.get(kv.getKey()));
+	    }
 	    message.setAction(Action.RECEIVE_FILE);
-	    Set<String> fileNames = new HashSet<String>();
-	    mapFiles.values().forEach(action -> action.forEach(file -> fileNames.add(file.getName())));
-	    message.addAllFileNames(fileNames);
 	    try {
 		kv.getValue().writeObject(message);
-	    } catch (IOException e) {
+	    } catch (Exception e) {
 		e.printStackTrace();
 	    }
-	}
+	});
     }
 
     /**
@@ -258,7 +254,6 @@ public class ServidorService implements Serializable {
     private void sendOnlines() {
 	Set<String> setNames = new HashSet<String>();
 	mapOnlines.entrySet().forEach(kv -> setNames.add(kv.getKey()));
-	mapFiles.toString();
 
 	ChatMessage message = new ChatMessage();
 	message.setAction(Action.USERS_ONLINE);
@@ -320,7 +315,7 @@ public class ServidorService implements Serializable {
 	System.out.println("O usuário " + message.getName() + " saiu da sala");
     }
 
-    public static Map<String, Set<File>> getMapFiles() {
+    public static Map<String, LinkedHashSet<File>> getMapFiles() {
 	return mapFiles;
     }
 
