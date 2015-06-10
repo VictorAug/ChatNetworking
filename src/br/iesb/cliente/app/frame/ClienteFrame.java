@@ -303,7 +303,7 @@ public class ClienteFrame extends JFrame {
 	ServerSocket servsock = null;
 	FileInputStream fileIn = null;
 	BufferedInputStream bis = null;
-	Socket socket = null;
+//	Socket socket = null;
 	int tam = 0;
 
 	try {
