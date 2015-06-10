@@ -4,25 +4,25 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
 import java.util.Set;
+import java.util.Locale.Category;
 
 import javax.swing.DefaultListModel;
 import javax.swing.DefaultListSelectionModel;
@@ -42,7 +42,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import net.miginfocom.swing.MigLayout;
 import br.iesb.app.bean.ChatMessage;
@@ -98,6 +97,8 @@ public class ClienteFrame extends JFrame {
 
     private boolean flag = true;
 
+    private Socket fileSocket;
+
     /**
      * Create the application.
      */
@@ -117,7 +118,8 @@ public class ClienteFrame extends JFrame {
 	getContentPane().setBackground(Color.black);
 	setBounds(100, 100, 980, 680);
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	getContentPane().setLayout(new MigLayout("", "[150][fill][][16.00][][grow][40][20][20][20][30][30][0.01][50][][][50]", "[5][15][5][][][20.00][grow][40][][][15][15][15][15]"));
+	getContentPane().setLayout(new MigLayout("", "[150][fill][][16.00][][grow][40][20][20][20][30][30][0.01][50][][][50]",
+						 "[5][15][5][][][20.00][grow][40][][][15][15][15][15]"));
 
 	listModel = new DefaultListModel();
 
@@ -149,7 +151,8 @@ public class ClienteFrame extends JFrame {
 	listRepoOnline.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 	listRepoOnline.setForeground(Color.YELLOW);
 	listRepoOnline.setModel(new DefaultListModel<String>());
-	listRepoOnline.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Reposit\u00F3rio Online", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(192, 192, 192)));
+	listRepoOnline.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Reposit\u00F3rio Online", TitledBorder.LEADING, TitledBorder.TOP, null,
+						  new Color(192, 192, 192)));
 	listRepoOnline.setBackground(Color.BLACK);
 	getContentPane().add(listRepoOnline, "cell 0 3 3 11,grow");
 
@@ -207,7 +210,7 @@ public class ClienteFrame extends JFrame {
 	btnEscolherArquivo.setEnabled(false);
 	btnEscolherArquivo.addActionListener(e -> {
 	    JFileChooser fileChooser = new JFileChooser(new File(System.getProperty("user.dir")));
-	    fileChooser.setMultiSelectionEnabled(true);
+	    fileChooser.setMultiSelectionEnabled(false);
 	    fileChooser.setAcceptAllFileFilterUsed(false);
 	    fileChooser.addChoosableFileFilter(new ImageFilter());
 	    fileChooser.addChoosableFileFilter(new DocumentFilter());
@@ -220,7 +223,9 @@ public class ClienteFrame extends JFrame {
 	    this.message = new ChatMessage();
 	    this.message.setAction(Action.SEND_FILE);
 	    this.message.setName(name);
-	    this.message.addFiles(fileChooser.getSelectedFiles());
+	    this.message.setFile(fileChooser.getSelectedFile());
+	    this.fileSocket = this.clientService.connectFile();
+	    upload();
 	    this.txtAreaReceive.append("Você enviou o(s) arquivo(s): " + this.message.getFileNames() + "\n");
 	    this.flag = false;
 	    this.clientService.send(this.message);
@@ -287,9 +292,42 @@ public class ClienteFrame extends JFrame {
 	menuBar.add(mnAjuda);
 
 	mntmInformaesDaRede = new JMenuItem("Informações da rede");
-	mntmInformaesDaRede.addActionListener(e -> JOptionPane.showMessageDialog(null, "IP do Servidor: " + this.clientService.getServerIP() + "\nIP do cliente: " + this.clientService.getClientIP(),
-		"Informações da rede", JOptionPane.DEFAULT_OPTION));
+	mntmInformaesDaRede.addActionListener(e -> JOptionPane.showMessageDialog(null, "IP do Servidor: " + this.clientService.getServerIP() + "\nIP do cliente: "
+		+ this.clientService.getClientIP(), "Informações da rede", JOptionPane.DEFAULT_OPTION));
 	mnAjuda.add(mntmInformaesDaRede);
+    }
+
+    private void upload() {
+	// Checa se a transferência foi completada com sucesso
+	OutputStream output = null;
+	ServerSocket servsock = null;
+	FileInputStream fileIn = null;
+	BufferedInputStream bis = null;
+	Socket socket = null;
+	int tam = 0;
+
+	try {
+	    // Criando tamanho de leitura
+	    byte[] cbuffer = new byte[(int) message.getFile().length()];
+	    int bytesRead;
+	    
+	    // Criando arquivo que será transferido pelo servidor
+	    fileIn = new FileInputStream(message.getFile());
+	    bis = new BufferedInputStream(fileIn);
+	    bis.read(cbuffer, 0, cbuffer.length);
+	    System.out.println("Lendo arquivo ...");
+
+	    // Criando canal de transferência
+	    output = socket.getOutputStream();
+	    
+	    // Lendo arquivo criado e enviado para o canal de transferência
+	    System.out.println("Enviando arquivo ...");
+	    output.write(cbuffer, 0, cbuffer.length);
+	    output.flush();
+	    System.out.println("Arquivo enviado!");
+	} catch (Exception e1) {
+	    e1.printStackTrace();
+	}
     }
 
     /**
@@ -369,7 +407,7 @@ public class ClienteFrame extends JFrame {
     private void receiveFile(ChatMessage message) {
 	System.out.println("receiveFile() → Thread " + txtName.getText());
 	System.out.println("message.getName() → " + message.getName() + "\n" + "this.message.getName() → " + this.message.getName());
-	
+
 	Set<String> arrayList = new HashSet<String>();
 	for (int i = 0; i < this.listRepoOnline.getModel().getSize(); i++) {
 	    arrayList.add((String) this.listRepoOnline.getModel().getElementAt(i));
@@ -379,14 +417,27 @@ public class ClienteFrame extends JFrame {
 	this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline));
 
 	if (this.message.getName().equals(message.getName())) {
-	    this.message.getFiles().forEach(f -> salvar(f));
+	    salvar(this.message.getFile());
 	} else {
-	    message.getFiles().forEach(f -> salvar(f));
-//	    if (flag) {
-		txtAreaReceive.append(message.getName() + " enviou o(s) arquivo(s): " + message.getFileNames() + "\n");
-//	    } else {
-//		flag = true;
-//	    }
+	    // message.getFile().forEach(f -> download(f.getName(), is));
+	    // txtAreaReceive.append(message.getName() +
+	    // " enviou o(s) arquivo(s): " + message.getFileNames() + "\n");
+	}
+    }
+
+    private void download(String filename, InputStream is) {
+	FileOutputStream fos = null;
+	byte[] buffer = new byte[1024];
+	int lidos;
+	try {
+	    fos = new FileOutputStream(new File(System.getProperty("user.dir") + "/database/" + filename));
+	    while ((lidos = is.read(buffer)) != -1) {
+		fos.write(buffer, 0, lidos);
+		fos.flush();
+	    }
+	    System.out.println("Arquivo " + filename + " recebido!");
+	} catch (IOException e) {
+	    e.printStackTrace();
 	}
     }
 
@@ -406,6 +457,7 @@ public class ClienteFrame extends JFrame {
 
 	    fin.transferTo(0, size, fout);
 	} catch (FileNotFoundException e) {
+	    e.printStackTrace();
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}

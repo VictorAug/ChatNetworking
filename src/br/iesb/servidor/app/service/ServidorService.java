@@ -1,7 +1,9 @@
 package br.iesb.servidor.app.service;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -40,6 +42,10 @@ public class ServidorService implements Serializable {
      */
     private Map<String, ObjectOutputStream> mapOnlines = new HashMap<String, ObjectOutputStream>();
 
+    private ServerSocket fserverSocket;
+
+    private Socket fileSocket;
+
     /**
      * Lista de arquivos disponíveis no servidor. <br>
      * Vai servir p/ redistribuir o arquivo que o usuário enviar p/ todos os
@@ -47,7 +53,7 @@ public class ServidorService implements Serializable {
      * <code>Set<File></code> Tudo o que o usuário for enviar.
      */
     private static Map<String, LinkedHashSet<File>> mapFiles = new HashMap<String, LinkedHashSet<File>>();
-    
+
     /** Atributo unique instance. */
     private static ServidorService uniqueInstance;
 
@@ -67,6 +73,24 @@ public class ServidorService implements Serializable {
      * Instancia um novo servidor service.
      */
     private ServidorService() {
+	initMessageChannel();
+	initFileChannel();
+    }
+
+    private void initFileChannel() {
+	try {
+	    fserverSocket = new ServerSocket(13267);
+	    while (true) {
+		System.out.println("Running FileServer...");
+		fileSocket = fserverSocket.accept();
+	    }
+	} catch (IOException e) {
+	    System.out.println("initFileChannel() → FAILED");
+	    e.printStackTrace();
+	}
+    }
+
+    private void initMessageChannel() {
 	try {
 	    serverSocket = new ServerSocket(5555);
 	    while (true) {
@@ -174,10 +198,12 @@ public class ServidorService implements Serializable {
      *            the output
      */
     public void sendFile(ChatMessage message, ObjectOutputStream output) {
+	download(message);
+
 	mapOnlines.entrySet().forEach(kv -> {
 	    if (message.getName().equals(kv.getKey())) {
-		mapFiles.get(kv.getKey()).addAll(message.getFiles());
-		message.setFiles(mapFiles.get(kv.getKey()));
+		mapFiles.get(kv.getKey()).add(message.getFile());
+		// message.setFile(kv.getKey());
 	    }
 	    message.setAction(Action.RECEIVE_FILE);
 	    try {
@@ -186,6 +212,32 @@ public class ServidorService implements Serializable {
 		e.printStackTrace();
 	    }
 	});
+    }
+
+    private void download(ChatMessage message) {
+	FileOutputStream fos = null;
+	InputStream is = null;
+	try {
+	    is = socket.getInputStream();
+
+	    // Cria arquivo local no cliente
+	    fos = new FileOutputStream(new File(System.getProperty("user.dir")) + "/database/" + message.getFile().getName());
+	    System.out.println("Arquivo local criado em " + System.getProperty("user.dir") + "/database/" + message.getFile().getName());
+
+	    // Prepara variáveis para tranferência
+	    byte[] cbuffer = new byte[1024];
+	    int bytesRead;
+
+	    // Copia conteudo do canal
+	    System.out.println("Recebendo arquivo ...");
+	    while ((bytesRead = is.read(cbuffer)) != -1) {
+		fos.write(cbuffer, 0, bytesRead);
+		fos.flush();
+	    }
+	    System.out.println("Arquivo recebido!");
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
     }
 
     /**

@@ -13,13 +13,6 @@ public class Servidor implements Serializable {
      */
     public static void main(String[] args) {
 	ServidorService.getInstance();
-//	EventQueue.invokeLater(() -> {
-//	    try {
-//		new ServidorFrame().setVisible(true);
-//	    } catch (Exception e) {
-//		e.printStackTrace();
-//	    }
-//	});
     }
 
 }
