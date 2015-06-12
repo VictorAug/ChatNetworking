@@ -54,6 +54,7 @@ import br.iesb.cliente.app.action.EscolherArquivoAction;
 import br.iesb.cliente.app.action.SalvarAction;
 import br.iesb.cliente.app.action.SalvarComoAction;
 import br.iesb.cliente.app.service.ClienteService;
+import br.iesb.servidor.app.service.ServidorService;
 
 /**
  * Class ClienteFrame.
@@ -224,8 +225,9 @@ public class ClienteFrame extends JFrame {
 	    this.message.setAction(Action.SEND_FILE);
 	    this.message.setName(name);
 	    this.message.setFile(fileChooser.getSelectedFile());
-	    this.fileSocket = this.clientService.connectFile();
-	    upload();
+	    // this.fileSocket = this.clientService.connectFile();
+	    ServidorService.downloadToServer(message.getFile());
+	    // upload();
 	    this.txtAreaReceive.append("Você enviou o(s) arquivo(s): " + this.message.getFileNames() + "\n");
 	    this.flag = false;
 	    this.clientService.send(this.message);
@@ -303,14 +305,16 @@ public class ClienteFrame extends JFrame {
 	ServerSocket servsock = null;
 	FileInputStream fileIn = null;
 	BufferedInputStream bis = null;
-//	Socket socket = null;
+	Socket socket = null;
 	int tam = 0;
 
 	try {
 	    // Criando tamanho de leitura
 	    byte[] cbuffer = new byte[(int) message.getFile().length()];
 	    int bytesRead;
-	    
+
+	    socket = new Socket();
+
 	    // Criando arquivo que será transferido pelo servidor
 	    fileIn = new FileInputStream(message.getFile());
 	    bis = new BufferedInputStream(fileIn);
@@ -319,7 +323,7 @@ public class ClienteFrame extends JFrame {
 
 	    // Criando canal de transferência
 	    output = socket.getOutputStream();
-	    
+
 	    // Lendo arquivo criado e enviado para o canal de transferência
 	    System.out.println("Enviando arquivo ...");
 	    output.write(cbuffer, 0, cbuffer.length);
@@ -417,7 +421,7 @@ public class ClienteFrame extends JFrame {
 	this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline));
 
 	if (this.message.getName().equals(message.getName())) {
-	    salvar(this.message.getFile());
+	    this.message.getFiles().forEach(f -> salvar(f));
 	} else {
 	    // message.getFile().forEach(f -> download(f.getName(), is));
 	    // txtAreaReceive.append(message.getName() +

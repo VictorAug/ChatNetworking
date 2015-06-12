@@ -1,14 +1,19 @@
 package br.iesb.servidor.app.service;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -57,6 +62,8 @@ public class ServidorService implements Serializable {
     /** Atributo unique instance. */
     private static ServidorService uniqueInstance;
 
+    private static final String host = "localhost";
+
     /**
      * Retorna uma instância de ServidorService.
      *
@@ -74,21 +81,21 @@ public class ServidorService implements Serializable {
      */
     private ServidorService() {
 	initMessageChannel();
-	initFileChannel();
+	// initFileChannel();
     }
 
-    private void initFileChannel() {
-	try {
-	    fserverSocket = new ServerSocket(13267);
-	    while (true) {
-		System.out.println("Running FileServer...");
-		fileSocket = fserverSocket.accept();
-	    }
-	} catch (IOException e) {
-	    System.out.println("initFileChannel() → FAILED");
-	    e.printStackTrace();
-	}
-    }
+    // private void initFileChannel() {
+    // try {
+    // fserverSocket = new ServerSocket(13267);
+    // while (true) {
+    // System.out.println("Running FileServer...");
+    // fileSocket = fserverSocket.accept();
+    // }
+    // } catch (IOException e) {
+    // System.out.println("initFileChannel() → FAILED");
+    // e.printStackTrace();
+    // }
+    // }
 
     private void initMessageChannel() {
 	try {
@@ -198,12 +205,12 @@ public class ServidorService implements Serializable {
      *            the output
      */
     public void sendFile(ChatMessage message, ObjectOutputStream output) {
-	download(message);
+	// download(message);
 
 	mapOnlines.entrySet().forEach(kv -> {
 	    if (message.getName().equals(kv.getKey())) {
 		mapFiles.get(kv.getKey()).add(message.getFile());
-		// message.setFile(kv.getKey());
+		message.setFiles(mapFiles.get(kv.getKey()));
 	    }
 	    message.setAction(Action.RECEIVE_FILE);
 	    try {
@@ -214,31 +221,93 @@ public class ServidorService implements Serializable {
 	});
     }
 
-    private void download(ChatMessage message) {
-	FileOutputStream fos = null;
-	InputStream is = null;
+    public static void downloadToServer(File file) {
 	try {
-	    is = socket.getInputStream();
+	    JOptionPane.showMessageDialog(null, "ServidorService → downloadToServer() → C:/Documents and Settings/User/Desktop");
+	    int lidos;
+	    int current = 0;
+	    Socket socket = new Socket(host, 5555);
 
-	    // Cria arquivo local no cliente
-	    fos = new FileOutputStream(new File(System.getProperty("user.dir")) + "/database/" + message.getFile().getName());
-	    System.out.println("Arquivo local criado em " + System.getProperty("user.dir") + "/database/" + message.getFile().getName());
+	    // Recebendo arquivo
+	    byte[] buffer = new byte[(int) file.length()];
+	    InputStream is = socket.getInputStream();
+	    File novo = new File("C:/Documents and Settings/User/Desktop" + "/server/" + file.getName());
+	    FileOutputStream fos = new FileOutputStream(novo);
+	    BufferedOutputStream bos = new BufferedOutputStream(fos);
+	    lidos = is.read(buffer, 0, buffer.length);
+	    current = lidos;
+	    do {
+		lidos = is.read(buffer, 0, buffer.length - current);
+		if (lidos >= 0) {
+		    current += lidos;
+		}
+	    } while (lidos > -1);
 
-	    // Prepara variáveis para tranferência
-	    byte[] cbuffer = new byte[1024];
-	    int bytesRead;
-
-	    // Copia conteudo do canal
-	    System.out.println("Recebendo arquivo ...");
-	    while ((bytesRead = is.read(cbuffer)) != -1) {
-		fos.write(cbuffer, 0, bytesRead);
-		fos.flush();
-	    }
-	    System.out.println("Arquivo recebido!");
-	} catch (Exception e) {
+	    bos.write(buffer, 0, current);
+	    bos.close();
+	    socket.close();
+	} catch (UnknownHostException e) {
+	    e.printStackTrace();
+	} catch (IOException e) {
 	    e.printStackTrace();
 	}
     }
+
+    public static void uploadToClient(File file) {
+	try {
+	    // Cria o socket temporário
+	    ServerSocket server = new ServerSocket(13267);
+	    while (true) {
+		Socket socket = server.accept();
+		System.out.println("Conexão aceita: " + socket);
+
+		// Envia o arquivo
+		byte[] buffer = new byte[(int) file.length()];
+		FileInputStream fis = new FileInputStream(file);
+		BufferedInputStream bis = new BufferedInputStream(fis);
+		bis.read(buffer, 0, buffer.length);
+
+		OutputStream os = socket.getOutputStream();
+		System.out.println("Enviando...");
+		os.write(buffer, 0, buffer.length);
+		os.flush();
+		bis.close();
+		socket.close();
+		server.close();
+	    }
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+    }
+
+    // private void download(ChatMessage message) {
+    // FileOutputStream fos = null;
+    // InputStream is = null;
+    // try {
+    // is = socket.getInputStream();
+    //
+    // // Cria arquivo local no cliente
+    // fos = new FileOutputStream(new File(System.getProperty("user.dir")) +
+    // "/database/" + message.getFile().getName());
+    // System.out.println("Arquivo local criado em " +
+    // System.getProperty("user.dir") + "/database/" +
+    // message.getFile().getName());
+    //
+    // // Prepara variáveis para tranferência
+    // byte[] cbuffer = new byte[1024];
+    // int bytesRead;
+    //
+    // // Copia conteudo do canal
+    // System.out.println("Recebendo arquivo ...");
+    // while ((bytesRead = is.read(cbuffer)) != -1) {
+    // fos.write(cbuffer, 0, bytesRead);
+    // fos.flush();
+    // }
+    // System.out.println("Arquivo recebido!");
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // }
+    // }
 
     /**
      * Send one.

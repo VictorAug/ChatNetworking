@@ -16,14 +16,14 @@ public class ClienteService implements Serializable {
     /** Socket para estabelecer a conexão com o servidor. */
     private Socket socket;
     
-    private Socket fileSocket;
+//    private Socket fileSocket;
 
     /** Objeto com o conteúdo da mensagem a ser enviada ao servidor. */
     private ObjectOutputStream output;
 
     public Socket connect() {
 	try {
-	    this.socket = new Socket("localhost", 5555);
+	    this.socket = new Socket("192.168.0.107", 5555);
 	    this.output = new ObjectOutputStream(socket.getOutputStream());
 	} catch (UnknownHostException e) {
 	    e.printStackTrace();
@@ -33,18 +33,18 @@ public class ClienteService implements Serializable {
 	return socket;
     }
 
-    public Socket connectFile() {
-	try {
-	    this.fileSocket = new Socket("localhost", 13267);
-	} catch (UnknownHostException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	} catch (IOException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	}
-	return fileSocket;
-    }
+//    public Socket connectFile() {
+//	try {
+//	    this.fileSocket = new Socket("localhost", 5555);
+//	} catch (UnknownHostException e) {
+//	    // TODO Auto-generated catch block
+//	    e.printStackTrace();
+//	} catch (IOException e) {
+//	    // TODO Auto-generated catch block
+//	    e.printStackTrace();
+//	}
+//	return fileSocket;
+//    }
     
     public void send(ChatMessage message) {
 	try {

@@ -3,6 +3,7 @@ package br.iesb.app.bean;
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -40,6 +41,8 @@ public class ChatMessage implements Serializable {
      * é a ação que deseja executar.
      */
     private Action action;
+
+    private LinkedHashSet<File> files = new LinkedHashSet<File>();
 
     public enum Action {
 	CONNECT, DISCONNECT, SEND_ONE, SEND_ALL, USERS_ONLINE, SEND_FILE, RECEIVE_FILE, UPLOAD_FILE;
@@ -108,6 +111,14 @@ public class ChatMessage implements Serializable {
     @Override
     public String toString() {
 	return "[name=" + name + ", files=" + file + ", fileNames=" + fileNames + ", nameReserved=" + nameReserved + ", onlines=" + onlines + "]";
+    }
+
+    public void setFiles(LinkedHashSet<File> files) {
+	this.files = files;
+    }
+
+    public LinkedHashSet<File> getFiles() {
+	return files;
     }
 
 }
