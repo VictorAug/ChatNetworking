@@ -11,7 +11,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -20,9 +19,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.Locale.Category;
 
 import javax.swing.DefaultListModel;
 import javax.swing.DefaultListSelectionModel;
@@ -225,9 +223,7 @@ public class ClienteFrame extends JFrame {
 	    this.message.setAction(Action.SEND_FILE);
 	    this.message.setName(name);
 	    this.message.setFile(fileChooser.getSelectedFile());
-	    // this.fileSocket = this.clientService.connectFile();
-	    ServidorService.downloadToServer(message.getFile());
-	    // upload();
+	    new Thread(() -> ClienteService.uploadToServer(message.getFile())).start();
 	    this.txtAreaReceive.append("Você enviou o(s) arquivo(s): " + this.message.getFileNames() + "\n");
 	    this.flag = false;
 	    this.clientService.send(this.message);
@@ -299,40 +295,40 @@ public class ClienteFrame extends JFrame {
 	mnAjuda.add(mntmInformaesDaRede);
     }
 
-    private void upload() {
-	// Checa se a transferência foi completada com sucesso
-	OutputStream output = null;
-	ServerSocket servsock = null;
-	FileInputStream fileIn = null;
-	BufferedInputStream bis = null;
-	Socket socket = null;
-	int tam = 0;
-
-	try {
-	    // Criando tamanho de leitura
-	    byte[] cbuffer = new byte[(int) message.getFile().length()];
-	    int bytesRead;
-
-	    socket = new Socket();
-
-	    // Criando arquivo que será transferido pelo servidor
-	    fileIn = new FileInputStream(message.getFile());
-	    bis = new BufferedInputStream(fileIn);
-	    bis.read(cbuffer, 0, cbuffer.length);
-	    System.out.println("Lendo arquivo ...");
-
-	    // Criando canal de transferência
-	    output = socket.getOutputStream();
-
-	    // Lendo arquivo criado e enviado para o canal de transferência
-	    System.out.println("Enviando arquivo ...");
-	    output.write(cbuffer, 0, cbuffer.length);
-	    output.flush();
-	    System.out.println("Arquivo enviado!");
-	} catch (Exception e1) {
-	    e1.printStackTrace();
-	}
-    }
+//    private void upload() {
+//	// Checa se a transferência foi completada com sucesso
+//	OutputStream output = null;
+//	ServerSocket servsock = null;
+//	FileInputStream fileIn = null;
+//	BufferedInputStream bis = null;
+//	Socket socket = null;
+//	int tam = 0;
+//
+//	try {
+//	    // Criando tamanho de leitura
+//	    byte[] cbuffer = new byte[(int) message.getFile().length()];
+//	    int bytesRead;
+//
+//	    socket = new Socket();
+//
+//	    // Criando arquivo que será transferido pelo servidor
+//	    fileIn = new FileInputStream(message.getFile());
+//	    bis = new BufferedInputStream(fileIn);
+//	    bis.read(cbuffer, 0, cbuffer.length);
+//	    System.out.println("Lendo arquivo ...");
+//
+//	    // Criando canal de transferência
+//	    output = socket.getOutputStream();
+//
+//	    // Lendo arquivo criado e enviado para o canal de transferência
+//	    System.out.println("Enviando arquivo ...");
+//	    output.write(cbuffer, 0, cbuffer.length);
+//	    output.flush();
+//	    System.out.println("Arquivo enviado!");
+//	} catch (Exception e1) {
+//	    e1.printStackTrace();
+//	}
+//    }
 
     /**
      * Classe ListenerSocket.
@@ -412,47 +408,27 @@ public class ClienteFrame extends JFrame {
 	System.out.println("receiveFile() → Thread " + txtName.getText());
 	System.out.println("message.getName() → " + message.getName() + "\n" + "this.message.getName() → " + this.message.getName());
 
-	Set<String> arrayList = new HashSet<String>();
-	for (int i = 0; i < this.listRepoOnline.getModel().getSize(); i++) {
-	    arrayList.add((String) this.listRepoOnline.getModel().getElementAt(i));
-	}
-	arrayList.addAll(message.getFileNames());
+	List<String> arrayList = new ArrayList<String>();
+	// for (File file : ServidorService.getFilesFromServer()) {
+	// arrayList.add(file.getName());
+	// }
 	this.listRepoOnline.setListData(arrayList.toArray());
-	this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline));
 
+	if (EscolherArquivoAction.getInstance() == null) {
+	    this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline));
+	}
+	// ClienteService.uploadToClient(message.getFile());
 	if (this.message.getName().equals(message.getName())) {
 	    this.message.getFiles().forEach(f -> salvar(f));
-	} else {
-	    // message.getFile().forEach(f -> download(f.getName(), is));
-	    // txtAreaReceive.append(message.getName() +
-	    // " enviou o(s) arquivo(s): " + message.getFileNames() + "\n");
-	}
-    }
-
-    private void download(String filename, InputStream is) {
-	FileOutputStream fos = null;
-	byte[] buffer = new byte[1024];
-	int lidos;
-	try {
-	    fos = new FileOutputStream(new File(System.getProperty("user.dir") + "/database/" + filename));
-	    while ((lidos = is.read(buffer)) != -1) {
-		fos.write(buffer, 0, lidos);
-		fos.flush();
-	    }
-	    System.out.println("Arquivo " + filename + " recebido!");
-	} catch (IOException e) {
-	    e.printStackTrace();
 	}
     }
 
     @SuppressWarnings("resource")
     private void salvar(File escolhido) {
 	try {
-	    File novo = new File(System.getProperty("user.dir") + "/database/" + this.message.getName() + "_" + escolhido.getName());
+	    File novo = new File(System.getProperty("user.dir") + "/database/" + escolhido.getName());
 	    FileInputStream fileInputStream = new FileInputStream(escolhido);
 	    FileOutputStream fileOutputStream = new FileOutputStream(novo);
-
-	    EscolherArquivoAction.getInstance().addFileName(novo.getName());
 
 	    FileChannel fin = fileInputStream.getChannel();
 	    FileChannel fout = fileOutputStream.getChannel();
