@@ -184,7 +184,7 @@ public class ServidorService implements Serializable {
      *            the output
      */
     public void sendFile(ChatMessage message, ObjectOutputStream output) {
-	new Thread(() -> ServidorService.downloadToServer(message.getFile())).start();
+	ServidorService.downloadToServer(message.getFile());
 
 	mapOnlines.entrySet().forEach(kv -> {
 	    if (message.getName().equals(kv.getKey())) {
@@ -200,7 +200,6 @@ public class ServidorService implements Serializable {
 	});
     }
 
-    @SuppressWarnings("resource")
     public static void downloadToServer(File file) {
 	try {
 	    ServerSocket server = new ServerSocket(12345);
@@ -220,6 +219,9 @@ public class ServidorService implements Serializable {
 		count += c;
 		out.write(c);
 	    }
+	    out.close();
+	    socket.close();
+	    server.close();
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}

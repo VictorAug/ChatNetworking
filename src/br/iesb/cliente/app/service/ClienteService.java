@@ -69,7 +69,6 @@ public class ClienteService implements Serializable {
 	return socket.getRemoteSocketAddress();
     }
 
-    @SuppressWarnings("resource")
     public static void uploadToServer(File file) {
 	try {
 	    FileInputStream fin = new FileInputStream(file);
@@ -83,10 +82,13 @@ public class ClienteService implements Serializable {
 	    dos.writeLong(file.length());
 	    dos.flush();
 	    int c;
+	    System.out.println("uploadToServer() → "+file);
 	    while ((c = fin.read()) != -1) {
 		System.out.println(c);
 		out.write(c);
 	    }
+	    fin.close();
+	    socket.close();
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
