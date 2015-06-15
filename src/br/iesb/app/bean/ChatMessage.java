@@ -43,6 +43,8 @@ public class ChatMessage implements Serializable {
     private Action action;
 
     private LinkedHashSet<File> files = new LinkedHashSet<File>();
+    
+    private String IPdoCliente;
 
     public enum Action {
 	CONNECT, DISCONNECT, SEND_ONE, SEND_ALL, USERS_ONLINE, SEND_FILE, RECEIVE_FILE, UPLOAD_FILE;
@@ -119,6 +121,14 @@ public class ChatMessage implements Serializable {
 
     public LinkedHashSet<File> getFiles() {
 	return files;
+    }
+
+    public String getIPdoCliente() {
+	return IPdoCliente;
+    }
+
+    public void setIPdoCliente(String iPdoCliente) {
+	IPdoCliente = iPdoCliente;
     }
 
 }

@@ -1,11 +1,15 @@
 package br.iesb.cliente.app.service;
 
-import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -19,7 +23,7 @@ import br.iesb.app.bean.ChatMessage;
 
 public class ClienteService implements Serializable {
 
-    private static final String host = "localhost";
+    private static final String host = "192.168.0.109";
 
     private static final long serialVersionUID = 3527000015250907284L;
 
@@ -45,6 +49,7 @@ public class ClienteService implements Serializable {
 
     public void send(ChatMessage message) {
 	try {
+	    message.setIPdoCliente(this.socket.getInetAddress().getHostAddress());
 	    output.writeObject(message);
 	} catch (IOException e) {
 	    e.printStackTrace();
@@ -69,6 +74,11 @@ public class ClienteService implements Serializable {
 	return socket.getRemoteSocketAddress();
     }
 
+    /**
+     * Abre canal e faz upload do arquivo para o servidor.
+     *
+     * @param file the file
+     */
     public static void uploadToServer(File file) {
 	try {
 	    FileInputStream fin = new FileInputStream(file);
@@ -93,31 +103,31 @@ public class ClienteService implements Serializable {
 	    e.printStackTrace();
 	}
     }
-
-    public static void uploadToServer2(File file) {
+    
+    public static void downloadToClient(File file) {
 	try {
-	    // Cria o socket temporário
 	    ServerSocket server = new ServerSocket(12345);
-	    // while (true) {
-	    System.out.println("Esperando conexão");
 	    Socket socket = server.accept();
-	    System.out.println("Conexão aceita: " + socket);
-
-	    // Envia o arquivo
-	    byte[] buffer = new byte[(int) file.length()];
-	    FileInputStream fis = new FileInputStream(file);
-	    BufferedInputStream bis = new BufferedInputStream(fis);
-	    bis.read(buffer, 0, buffer.length);
-
-	    ObjectOutputStream os = new ObjectOutputStream(socket.getOutputStream());
-	    System.out.println("Enviando...");
-	    os.write(buffer, 0, buffer.length);
-	    os.writeLong(file.length());
-	    os.flush();
-	    bis.close();
+	    InputStream in = socket.getInputStream();
+	    InputStreamReader isr = new InputStreamReader(in);
+	    BufferedReader reader = new BufferedReader(isr);
+	    String fName = reader.readLine();
+	    System.out.println("Downloading from server: " + fName);
+	    new File(System.getProperty("user.dir") + "/database/").mkdir();
+	    File f = new File(System.getProperty("user.dir") + "/database/" + file.getName());
+	    FileOutputStream out = new FileOutputStream(f);
+	    DataInputStream dis = new DataInputStream(in);
+	    long tamanho = dis.readLong();
+	    int c;
+	    Integer count = 0;
+	    while ((c = in.read()) != -1 || count < tamanho) {
+		count += c;
+		out.write(c);
+	    }
+	    System.out.println("Arquivo recebido!");
+	    out.close();
 	    socket.close();
 	    server.close();
-	    // }
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
