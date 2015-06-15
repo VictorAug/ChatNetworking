@@ -49,7 +49,8 @@ public class ClienteService implements Serializable {
 
     public void send(ChatMessage message) {
 	try {
-	    message.setIPdoCliente(this.socket.getInetAddress().getHostAddress());
+	    String string = this.socket.getLocalSocketAddress().toString();
+	    message.setIPdoCliente(string.substring(1, string.indexOf(":")));
 	    output.writeObject(message);
 	} catch (IOException e) {
 	    e.printStackTrace();
@@ -106,7 +107,7 @@ public class ClienteService implements Serializable {
     
     public static void downloadToClient(File file) {
 	try {
-	    ServerSocket server = new ServerSocket(12345);
+	    ServerSocket server = new ServerSocket(12344);
 	    Socket socket = server.accept();
 	    InputStream in = socket.getInputStream();
 	    InputStreamReader isr = new InputStreamReader(in);

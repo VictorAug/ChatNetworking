@@ -198,6 +198,7 @@ public class ServidorService implements Serializable {
 		ServidorService.host = message.getIPdoCliente();
 		try {
 		    kv.getValue().writeObject(message);
+		    Thread.sleep(500);
 		    new Thread(() -> ServidorService.uploadToClient(file)).start();
 		} catch (Exception e) {
 		    e.printStackTrace();
@@ -249,7 +250,7 @@ public class ServidorService implements Serializable {
     public static void uploadToClient(File file) {
 	try {
 	    FileInputStream fin = new FileInputStream(file);
-	    Socket socket = new Socket(host, 12345);
+	    Socket socket = new Socket(host, 12344);
 	    OutputStream out = socket.getOutputStream();
 	    OutputStreamWriter osw = new OutputStreamWriter(out);
 	    BufferedWriter writer = new BufferedWriter(osw);
