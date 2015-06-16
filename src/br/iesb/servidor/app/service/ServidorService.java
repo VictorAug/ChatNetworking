@@ -196,10 +196,10 @@ public class ServidorService implements Serializable {
 		message.setFiles(mapFiles.get(kv.getKey()));
 	    }
 	    message.setAction(Action.RECEIVE_FILE);
-	    String x = mapHost.get(kv.getKey());
-	    System.out.println(x);
-	    if (x != null) {
-		ServidorService.host = x;
+	    String ipCliente = mapHost.get(kv.getKey());
+	    System.out.println(ipCliente);
+	    if (ipCliente != null) {
+		ServidorService.host = ipCliente;
 		try {
 		    kv.getValue().writeObject(message);
 		    System.out.println("Transferindo " + file.getName() + " para o cliente: " + ServidorService.host);
