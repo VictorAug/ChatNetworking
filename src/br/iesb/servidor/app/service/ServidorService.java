@@ -17,6 +17,7 @@ import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -82,6 +83,9 @@ public class ServidorService implements Serializable {
      */
     private ServidorService() {
 	try {
+	    if (new File(System.getProperty("user.dir")+"/server/").exists()) {
+		Arrays.asList(new File(System.getProperty("user.dir")+"/server/").listFiles()).forEach(f->f.delete());
+	    }
 	    serverSocket = new ServerSocket(5555);
 	    while (true) {
 		System.out.println("Running Server...");
@@ -225,6 +229,7 @@ public class ServidorService implements Serializable {
 		    ServidorService.host = ipCliente;
 		    try {
 			kv.getValue().writeObject(message);
+			System.out.println(file);
 			System.out.println("Transferindo " + file.getName() + " para o cliente: " + ServidorService.host);
 			Thread.sleep(100);
 			ServidorService.uploadToClient(file);
@@ -268,7 +273,11 @@ public class ServidorService implements Serializable {
 		count += c;
 		out.write(c);
 	    }
+	    dis.close();
 	    out.close();
+	    isr.close();
+	    reader.close();
+	    in.close();
 	    socket.close();
 	    server.close();
 	    return f;
@@ -297,6 +306,9 @@ public class ServidorService implements Serializable {
 		out.write(c);
 	    }
 	    System.out.println("Arquivo transferido para cliente!");
+	    writer.close();
+	    out.close();
+	    osw.close();
 	    fin.close();
 	    socket.close();
 	} catch (IOException e) {

@@ -220,13 +220,20 @@ public class ClienteFrame extends JFrame {
 	    }
 	    String name = this.message.getName();
 	    this.message = new ChatMessage();
+	    if (this.listOnlines.getSelectedIndex() > -1) {
+		this.message.setNameReserved((String) this.listOnlines.getSelectedValue());
+		this.listOnlines.clearSelection();
+	    }
 	    this.message.setAction(Action.SEND_FILE);
 	    this.message.setName(name);
 	    this.message.setFile(fileChooser.getSelectedFile());
-	    this.txtAreaReceive.append("Você enviou o(s) arquivo(s): " + this.message.getFileNames() + "\n");
+	    this.txtAreaReceive.append("Você enviou o arquivo: " + this.message.getFile().getName() + "\n");
 	    this.flag = false;
 	    this.clientService.send(this.message);
-	    new Thread(() -> ClienteService.uploadToServer(this.message.getFile())).start();
+	    ClienteService.uploadToServer(this.message.getFile());
+	    if (EscolherArquivoAction.getInstance() == null) {
+		this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline));
+	    }
 	});
 
 	btnEnviar = new JButton("Enviar");
@@ -294,41 +301,6 @@ public class ClienteFrame extends JFrame {
 		+ this.clientService.getClientIP(), "Informações da rede", JOptionPane.DEFAULT_OPTION));
 	mnAjuda.add(mntmInformaesDaRede);
     }
-
-    // private void upload() {
-    // // Checa se a transferência foi completada com sucesso
-    // OutputStream output = null;
-    // ServerSocket servsock = null;
-    // FileInputStream fileIn = null;
-    // BufferedInputStream bis = null;
-    // Socket socket = null;
-    // int tam = 0;
-    //
-    // try {
-    // // Criando tamanho de leitura
-    // byte[] cbuffer = new byte[(int) message.getFile().length()];
-    // int bytesRead;
-    //
-    // socket = new Socket();
-    //
-    // // Criando arquivo que será transferido pelo servidor
-    // fileIn = new FileInputStream(message.getFile());
-    // bis = new BufferedInputStream(fileIn);
-    // bis.read(cbuffer, 0, cbuffer.length);
-    // System.out.println("Lendo arquivo ...");
-    //
-    // // Criando canal de transferência
-    // output = socket.getOutputStream();
-    //
-    // // Lendo arquivo criado e enviado para o canal de transferência
-    // System.out.println("Enviando arquivo ...");
-    // output.write(cbuffer, 0, cbuffer.length);
-    // output.flush();
-    // System.out.println("Arquivo enviado!");
-    // } catch (Exception e1) {
-    // e1.printStackTrace();
-    // }
-    // }
 
     /**
      * Classe ListenerSocket.
@@ -408,19 +380,15 @@ public class ClienteFrame extends JFrame {
 	System.out.println("receiveFile() → Thread " + txtName.getText());
 	System.out.println("message.getName() → " + message.getName() + "\n" + "this.message.getName() → " + this.message.getName());
 
-	List<String> arrayList = new ArrayList<String>();
-	// for (File file : ServidorService.getFilesFromServer()) {
-	// arrayList.add(file.getName());
-	// }
-	this.listRepoOnline.setListData(arrayList.toArray());
-
 	if (EscolherArquivoAction.getInstance() == null) {
 	    this.listRepoOnline.addMouseListener(EscolherArquivoAction.getInstance(listRepoOnline));
 	}
-	ClienteService.downloadToClient(message.getFile());
-	if (this.message.getName().equals(message.getName())) {
-	    this.message.getFiles().forEach(f -> salvar(f));
+	if (!this.message.getName().equals(message.getName())) {
+	    this.txtAreaReceive.append(message.getName() + " enviou o arquivo: " + message.getFile().getName() + "\n");
 	}
+	ClienteService.downloadToClient(message.getFile());
+
+	this.listRepoOnline.setListData(new File(System.getProperty("user.dir") + "/database/").list());
     }
 
     @SuppressWarnings("resource")

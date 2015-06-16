@@ -95,11 +95,15 @@ public class ClienteService implements Serializable {
 	    dos.writeLong(file.length());
 	    dos.flush();
 	    int c;
+	    int count = 0;
 	    System.out.println("uploadToServer() → " + file);
-	    while ((c = fin.read()) != -1) {
-		System.out.println(c);
+	    while ((c = fin.read()) != -1|| count < file.length()) {
+		count += c;
 		out.write(c);
 	    }
+	    out.close();
+	    osw.close();
+	    writer.close();
 	    fin.close();
 	    socket.close();
 	} catch (IOException e) {
