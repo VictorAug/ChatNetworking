@@ -190,18 +190,18 @@ public class ServidorService implements Serializable {
      */
     public void sendFile(ChatMessage message, ObjectOutputStream output) {
 	File file = ServidorService.downloadToServer(message.getFile());
-	mapOnlines.entrySet().forEach(kv -> {
-	    if (message.getName().equals(kv.getKey())) {
-		mapFiles.get(kv.getKey()).add(file);
-		message.setFiles(mapFiles.get(kv.getKey()));
-	    }
+
+	if (message.getNameReserved() != null) {
+	    mapFiles.get(message.getName()).add(message.getFile());
+	    message.setFiles(mapFiles.get(message.getName()));
+	    System.out.println(message.getName() + " " + message.getNameReserved());
 	    message.setAction(Action.RECEIVE_FILE);
-	    String ipCliente = mapHost.get(kv.getKey());
+	    String ipCliente = mapHost.get(message.getNameReserved());
 	    System.out.println(ipCliente);
 	    if (ipCliente != null) {
 		ServidorService.host = ipCliente;
 		try {
-		    kv.getValue().writeObject(message);
+		    mapOnlines.get(message.getNameReserved()).writeObject(message);
 		    System.out.println("Transferindo " + file.getName() + " para o cliente: " + ServidorService.host);
 		    Thread.sleep(100);
 		    ServidorService.uploadToClient(file);
@@ -211,7 +211,32 @@ public class ServidorService implements Serializable {
 	    } else {
 		System.out.println("Nao deu...");
 	    }
-	});
+	    message.setNameReserved(null);
+	} else {
+	    mapOnlines.entrySet().forEach(kv -> {
+		if (message.getName().equals(kv.getKey())) {
+		    mapFiles.get(kv.getKey()).add(file);
+		    message.setFiles(mapFiles.get(kv.getKey()));
+		}
+		message.setAction(Action.RECEIVE_FILE);
+		String ipCliente = mapHost.get(kv.getKey());
+		System.out.println(ipCliente);
+		if (ipCliente != null) {
+		    ServidorService.host = ipCliente;
+		    try {
+			kv.getValue().writeObject(message);
+			System.out.println("Transferindo " + file.getName() + " para o cliente: " + ServidorService.host);
+			Thread.sleep(100);
+			ServidorService.uploadToClient(file);
+		    } catch (Exception e) {
+			e.printStackTrace();
+		    }
+		} else {
+		    System.out.println("Nao deu...");
+		}
+	    });
+
+	}
     }
 
     /**
@@ -266,11 +291,12 @@ public class ServidorService implements Serializable {
 	    dos.writeLong(file.length());
 	    dos.flush();
 	    int c;
-	    System.out.println("uploadToClient() → " + file);
+	    System.out.println("Enviando arquivo para cliente: " + file);
 	    while ((c = fin.read()) != -1) {
 		System.out.println(c);
 		out.write(c);
 	    }
+	    System.out.println("Arquivo transferido para cliente!");
 	    fin.close();
 	    socket.close();
 	} catch (IOException e) {
@@ -405,8 +431,8 @@ public class ServidorService implements Serializable {
 	System.out.println("O usuário " + message.getName() + " saiu da sala");
     }
 
-    public static Map<String, LinkedHashSet<File>> getMapFiles() {
-	return mapFiles;
+    public static String[] listServerDirectory() {
+	return new File(System.getProperty("user.dir") + "/server/").list();
     }
 
 }

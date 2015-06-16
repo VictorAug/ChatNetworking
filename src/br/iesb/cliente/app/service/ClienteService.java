@@ -23,7 +23,7 @@ import br.iesb.app.bean.ChatMessage;
 
 public class ClienteService implements Serializable {
 
-    private static final String host = "192.168.25.7";
+    private static final String host = "localhost";
 
     private static final long serialVersionUID = 3527000015250907284L;
 
@@ -134,6 +134,10 @@ public class ClienteService implements Serializable {
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
+    }
+
+    public static String[] listServerDirectory() {
+	return new File(System.getProperty("user.dir") + "/database/").list();
     }
 
 }
